@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "willfind8",
+    "slug": "willfind8",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/willfind8-icon.png",
+    "scheme": "willfind8",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/willfind8-adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "splash": {
+      "image": "./assets/images/willfind8-splash.png",
+      "backgroundColor": "#ffffff",
+      "resizeMode": "cover"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/willfind8-logo.png",
+          "imageWidth":"100%",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
