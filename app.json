@@ -9,13 +9,15 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.willfind8"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/willfind8-adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.willfind8"
     },
     "splash": {
       "image": "./assets/images/willfind8-splash.png",
@@ -33,7 +35,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/willfind8-logo.png",
-          "imageWidth":"100%",
+          "imageWidth": "100%",
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
@@ -42,6 +44,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "50e78cd9-eacc-48f2-9c70-e04eb0009a0a"
+      }
     }
   }
 }
