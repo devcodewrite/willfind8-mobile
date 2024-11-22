@@ -1,19 +1,27 @@
-import { Text } from "@rneui/themed";
-import { StyleSheet } from "react-native";
+import { lightColors, Text } from "@rneui/themed";
+import { StyleSheet, ViewStyle } from "react-native";
 import { View } from "react-native";
 
-export function EmptyListingCard() {
+export function EmptyListingCard({
+  placeholder = "No listings",
+  style,
+}: {
+  placeholder?: string;
+  style?: ViewStyle;
+}) {
   return (
-    <View style={styles.container}>
-      <Text>No listings</Text>
+    <View style={[styles.container, style]}>
+      <Text style={styles.placeholder}>{placeholder}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: "center",
+    paddingTop: 100,
     alignItems: "center",
+  },
+  placeholder: {
+    color: lightColors.grey3,
   },
 });

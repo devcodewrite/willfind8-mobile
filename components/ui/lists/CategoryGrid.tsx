@@ -38,7 +38,10 @@ export default function CategoryGrid({
   numColumns?: number;
 }) {
   const handleCategoryClick = (item: Category) =>
-    router.push({ pathname: "/menus/search", params: { id: item.id } });
+    router.push({
+      pathname: "/search/categories",
+      params: { parentId: item.id, presentation: 0 },
+    });
 
   const handleRenderItem = ({ item }: { item: Category }) => (
     <CategoryCard

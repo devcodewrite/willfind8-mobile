@@ -4,9 +4,15 @@ import CustomAvatar from "@/components/ui/CustomAvatar";
 import { Tabs, useRouter } from "expo-router";
 import { lightColors } from "@rneui/base";
 import Logo from "@/components/ui/Logo";
+import { useCities } from "@/lib/store/CityContext";
+import { useEffect } from "react";
 
 export default function Layout() {
   const router = useRouter();
+  const { fetchCities } = useCities();
+  useEffect(() => {
+    fetchCities();
+  }, []);
 
   return (
     <Tabs

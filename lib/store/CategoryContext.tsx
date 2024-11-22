@@ -79,15 +79,29 @@ const categoryReducer = (
   switch (action.type) {
     case "FETCH_CATEGORIES_START":
       return { ...state, loading: true, error: null, lastFetchFailed: false };
-    case "FETCH_CATEGORIES_SUCCESS":
+    case "FETCH_CATEGORIES_SUCCESS": {
+      const newCategories = action.payload.categories;
+
+      // Filter out duplicates by checking existing IDs
+      const updatedCategories = [
+        ...state.categories,
+        ...newCategories.filter(
+          (newCategory) =>
+            !state.categories.some(
+              (existingCategory) => existingCategory.id === newCategory.id
+            )
+        ),
+      ];
+
       return {
         ...state,
         loading: false,
-        categories: [...state.categories, ...action.payload.categories],
+        categories: updatedCategories,
         page: state.page + 1, // Increment page on success
         hasMore: action.payload.hasMore,
         lastFetchFailed: false,
       };
+    }
     case "FETCH_CATEGORIES_ERROR":
       return {
         ...state,

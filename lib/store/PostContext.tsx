@@ -1,4 +1,10 @@
-import React, { createContext, useReducer, useContext, ReactNode } from "react";
+import React, {
+  createContext,
+  useReducer,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
 import api from "@/lib/apis/api";
 
 // Define post interface
@@ -9,6 +15,7 @@ interface Post {
   price: string;
   contact_name: string;
   phone: string;
+  count_pictures: number;
   pictures: Array<{
     id: number;
     post_id: number;
@@ -73,9 +80,12 @@ interface PostContextType {
     embed?: string;
     sort?: string | "created_at" | "-created_at";
     perPage?: number;
-    c?: number;
+    c?: number | string;
     cf?: Map<number, number>;
+    q?: string;
+    l?: number | string;
   }) => Promise<void>;
+  resetState: () => void;
   retryFetch: () => Promise<void>; // Expose a retry function
   getPostById: (
     id?: number,
@@ -97,7 +107,7 @@ const initialState: PostState = {
   error: null,
   page: 1,
   hasMore: true,
-  lastFetchFailed: false, // Initialize as false
+  lastFetchFailed: false,
 };
 
 // Action types
@@ -108,25 +118,36 @@ type Action =
       payload: { posts: Post[]; hasMore: boolean };
     }
   | { type: "FETCH_POSTS_ERROR"; payload: string }
-  | { type: "RESET_FETCH_FAILURE" };
+  | { type: "RESET_FETCH_FAILURE" }
+  | { type: "RESET_STATE" }; // New action for resetting state
 
 // Reducer function
 const postReducer = (state: PostState, action: Action): PostState => {
-  console.log("Dispatching action:", { type: action.type });
-
   switch (action.type) {
     case "FETCH_POSTS_START":
       return { ...state, loading: true, error: null, lastFetchFailed: false };
-    case "FETCH_POSTS_SUCCESS":
-      console.log("state page", state.page);
+    case "FETCH_POSTS_SUCCESS": {
+      const newPosts = action.payload.posts;
+
+      // Filter out duplicates by checking existing IDs
+      const updatedPosts = [
+        ...state.posts,
+        ...newPosts.filter(
+          (newPost) =>
+            !state.posts.some((existingPost) => existingPost.id === newPost.id)
+        ),
+      ];
+
       return {
         ...state,
         loading: false,
-        posts: [...state.posts, ...action.payload.posts],
-        page: state.page + 1, // Ensure page is incremented after successful fetch
+        posts: updatedPosts,
+        page: state.page + 1,
         hasMore: action.payload.hasMore,
         lastFetchFailed: false,
       };
+    }
+
     case "FETCH_POSTS_ERROR":
       return {
         ...state,
@@ -136,6 +157,8 @@ const postReducer = (state: PostState, action: Action): PostState => {
       };
     case "RESET_FETCH_FAILURE":
       return { ...state, lastFetchFailed: false };
+    case "RESET_STATE": // Handle state reset
+      return initialState;
     default:
       return state;
   }
@@ -147,37 +170,16 @@ export const PostProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [postState, dispatch] = useReducer(postReducer, initialState);
 
-  // Fetch posts function
-  const fetchPosts = async (params?: {
-    page?: number;
-    op?: "search" | "preminum" | "latest" | "similar";
-    postId?: number;
-    distance?: number;
-    belongLoggedUser?: boolean;
-    pendingApproval?: boolean;
-    archived?: boolean;
-    embed?: string;
-    sort?: string | "created_at" | "-created_at";
-    perPage?: number;
-    c?: number;
-    cf?: Map<number, number>;
-  }) => {
+  const fetchPosts = async (params?: { [key: string]: any }) => {
     const { page, loading, hasMore } = postState;
 
-    if (loading || !hasMore) {
-      console.log("Skipping fetch due to ongoing request or list ended.");
-      return;
-    }
+    if (loading || !hasMore) return;
 
     try {
-      console.log("Fetching posts with params:", { ...params, page });
       dispatch({ type: "FETCH_POSTS_START" });
 
       const response = await api.get("/api/posts", {
-        params: {
-          ...params,
-          page,
-        },
+        params: { ...params, page },
       });
 
       const { data: result } = response;
@@ -192,14 +194,9 @@ export const PostProvider: React.FC<{ children: ReactNode }> = ({
           payload: { posts, hasMore },
         });
       } else {
-        console.error("Error from server fetching posts:", message);
-        dispatch({
-          type: "FETCH_POSTS_ERROR",
-          payload: message,
-        });
+        dispatch({ type: "FETCH_POSTS_ERROR", payload: message });
       }
     } catch (error: any) {
-      console.error("Error fetching posts:", error);
       dispatch({
         type: "FETCH_POSTS_ERROR",
         payload: error.message || "Something went wrong",
@@ -207,46 +204,36 @@ export const PostProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  // Retry fetch function
   const retryFetch = async () => {
-    dispatch({ type: "RESET_FETCH_FAILURE" }); // Reset the failure flag
-    await fetchPosts(); // Retry fetching the posts
+    dispatch({ type: "RESET_FETCH_FAILURE" });
+    await fetchPosts();
   };
 
-  // Selector function to retrieve a post by ID
-  const getPostById = async (
-    id?: number,
-    params?: {
-      belongLoggedUser?: boolean;
-      pendingApproval?: boolean;
-      archived?: boolean;
-      detailed?: boolean;
-      embed?: string;
-      unactivatedIncluded?: boolean;
-    }
-  ) => {
+  const getPostById = async (id?: number, params?: { [key: string]: any }) => {
     try {
+      console.log("getPostById: ", id);
       const response = await api.get(`/api/posts/${id}`, {
         params: { detailed: 1, ...params },
       });
       const { data: result } = response;
-      const { success, message } = result;
+      const { success } = result;
 
-      if (!success) {
-        console.log("Server error fetching post:", message);
-        return null;
-      }
-      const post: Post = result.result;
-      return post;
+      if (!success) return null;
+      return result.result as Post;
     } catch (error: any) {
       console.error("Error fetching post:", error);
+      return null;
     }
-    return null;
+  };
+
+  // New function to reset state
+  const resetState = () => {
+    dispatch({ type: "RESET_STATE" });
   };
 
   return (
     <PostContext.Provider
-      value={{ postState, fetchPosts, retryFetch, getPostById }}
+      value={{ postState, fetchPosts, retryFetch, getPostById, resetState }}
     >
       {children}
     </PostContext.Provider>

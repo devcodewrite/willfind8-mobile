@@ -1,9 +1,9 @@
 // components/MainFilter.jsx
 import { Asset } from "expo-asset";
 import { Image } from "expo-image";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, DimensionValue } from "react-native";
 
-export default function Logo({ size = null }) {
+export default function Logo({ size }: { size?: any }) {
   const image = Asset.fromModule(
     require("@/assets/images/willfind8-logo-full.png")
   ).uri;
@@ -23,6 +23,6 @@ const styles = StyleSheet.create({
   image: {
     margin: 5,
     height: 40,
-    width:150
+    width: 150,
   },
 });

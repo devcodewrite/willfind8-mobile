@@ -4,48 +4,57 @@ import {
   StyleSheet,
   Alert,
   DimensionValue,
+  TouchableOpacity,
   GestureResponderEvent,
+  ViewStyle,
 } from "react-native";
 import { Card, Text, Icon } from "@rneui/themed";
 import { Image } from "expo-image";
 import { CountLabel } from "./CountLabel";
 import SavedButton from "./SavedButton";
-import { FontAwesome6 } from "@expo/vector-icons";
-import { TouchableOpacity } from "react-native";
 
 const PostCard = ({
-  imageUrl,
   title,
-  price,
-  location,
-  category,
-  subCategory,
-  images = [],
+  count_pictures,
+  price_formatted,
+  city,
+  picture,
   size = "100%",
-  showSubCategory = false,
   onPress,
+  style,
 }: {
-  imageUrl: string;
-  images: Array<{}>;
+  picture: {
+    filename: string;
+    url: {
+      full: string;
+      small: string;
+      medium: string;
+      big: string;
+    };
+  };
+  count_pictures: number;
   title: string;
-  category: string;
-  subCategory: string;
-  price: number;
-  location: string;
-  size: DimensionValue;
-  showSubCategory: boolean;
-  onPress: (event: GestureResponderEvent) => {};
+  price_formatted: string;
+  city?: {
+    id: number;
+    name: string;
+    latitude: string;
+    longitude: string;
+  };
+  size?: DimensionValue;
+  onPress?: (event: GestureResponderEvent) => void;
+  style?: ViewStyle;
 }): React.JSX.Element => {
   const placeholder = require("@/assets/images/Loading_icon.gif");
 
   return (
-    <TouchableOpacity onPress={onPress}>
+    <TouchableOpacity activeOpacity={0.75} style={style} onPress={onPress}>
       <Card containerStyle={[styles.card, { width: size }]}>
         {/* Post Image */}
         <Image
-          style={styles.image}
+          style={[styles.image, { width: size }]}
           contentFit="cover"
-          source={imageUrl}
+          source={picture.url.medium}
           cachePolicy={"memory"}
           placeholder={placeholder}
           placeholderContentFit="contain"
@@ -53,58 +62,44 @@ const PostCard = ({
         {/* Count Label */}
 
         <CountLabel
-          total={images.length}
+          total={count_pictures}
           style={styles.countLabel}
           num={undefined}
           variant={"dark"}
         />
 
-        {/* Post Details */}
-        <View style={styles.infoContainer}>
-          <Text numberOfLines={2} style={styles.title}>
-            {title}
-          </Text>
-
-          {showSubCategory ? (
-            <View style={styles.breadcrumb}>
-              <Text numberOfLines={2} style={styles.nav}>
-                {category}{" "}
-                <FontAwesome6
-                  name="angles-right"
-                  style={{ marginHorizontal: 2 }}
-                  size={10}
-                  color="black"
-                />{" "}
-                {subCategory}
-              </Text>
+        <View style={{ flex: 1 }}>
+          {/* Post Details */}
+          <View style={styles.infoContainer}>
+            <Text numberOfLines={2} style={styles.title}>
+              {title}
+            </Text>
+            <View style={styles.priceSection}>
+              <Text style={styles.price_formatted}>{price_formatted}</Text>
+              <SavedButton onPress={() => Alert.alert("Added")} />
             </View>
-          ) : null}
 
-          <View style={styles.priceSection}>
-            <Text style={styles.price}>{price}</Text>
-            <SavedButton onPress={() => Alert.alert("Added")} />
-          </View>
-
-          <View style={styles.locationContainer}>
-            <Icon
-              name="map-marker"
-              type="font-awesome"
-              color="#888"
-              size={12}
-            />
-            <Text style={styles.location}>{location}</Text>
+            <View style={styles.locationContainer}>
+              <Icon
+                name="map-marker"
+                type="font-awesome"
+                color="#888"
+                size={12}
+              />
+              <Text style={styles.location}>{city?.name}</Text>
+            </View>
           </View>
         </View>
       </Card>
     </TouchableOpacity>
   );
 };
-
 export default memo(PostCard);
 
 const styles = StyleSheet.create({
   card: {
-    padding: 0,
+    flex:1,
+    padding: 4,
     margin: 0,
     borderRadius: 8,
     overflow: "hidden",
@@ -115,22 +110,17 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   image: {
-    flex: 1,
     height: 150,
   },
   infoContainer: {
     padding: 8,
+    flex: 1,
   },
   breadcrumb: {
     flexDirection: "row",
     alignItems: "center",
   },
-  nav: {
-    fontSize: 14,
-    fontWeight: "400",
-    color: "#4682b4",
-    marginTop: 4,
-  },
+
   title: {
     fontSize: 16,
     fontWeight: "400",
@@ -141,7 +131,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  price: {
+  price_formatted: {
     fontSize: 16,
     color: "#4682b4",
     fontWeight: "600",
@@ -150,7 +140,6 @@ const styles = StyleSheet.create({
   locationContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
   },
   location: {
     fontSize: 12,
@@ -166,6 +155,6 @@ const styles = StyleSheet.create({
   countLabel: {
     position: "absolute",
     top: 8,
-    right: 8,
+    left: 8,
   },
 });

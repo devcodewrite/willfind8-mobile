@@ -13,6 +13,7 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { PostProvider } from "@/lib/store/PostContext";
 import { CategoryProvider } from "@/lib/store/CategoryContext";
+import { CityProvider } from "@/lib/store/CityContext";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -35,40 +36,45 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <CategoryProvider>
-        <PostProvider>
-          <Stack>
-            <Stack.Screen
-              name="(tabs)"
-              options={{ title: "", headerShown: false }}
-            />
-            <Stack.Screen
-              name="ads/add"
-              options={{ presentation: "containedModal" }}
-            />
-            <Stack.Screen
-              name="ads/details"
-              getId={({ params }) => params?.id}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="ads/fullscreen"
-              options={{ headerShown: false, animation: "fade" }}
-            />
-            <Stack.Screen name="menus/regions" />
-            <Stack.Screen name="menus/districts" />
-            <Stack.Screen
-              name="menus/search"
-              options={{
-                headerTitle: "",
-              }}
-            />
-            <Stack.Screen name="menus/main_category" />
-            <Stack.Screen name="menus/sub_category" />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-        </PostProvider>
-      </CategoryProvider>
+      <CityProvider>
+        <CategoryProvider>
+          <PostProvider>
+            <Stack>
+              <Stack.Screen
+                name="(tabs)"
+                options={{ title: "", headerShown: false }}
+              />
+              <Stack.Screen
+                name="ads/add"
+                options={{ presentation: "containedModal" }}
+              />
+              <Stack.Screen
+                name="ads/details"
+                getId={({ params }) => params?.id}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ads/fullscreen"
+                options={{ headerShown: false, animation: "fade" }}
+              />
+              <Stack.Screen
+                name="search/search"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen name="search/categories" />
+              <Stack.Screen
+                name="search/results"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="search/cities"
+                options={{ presentation: "modal", headerTitle: "Location" }}
+              />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+          </PostProvider>
+        </CategoryProvider>
+      </CityProvider>
       <StatusBar style="auto" />
     </ThemeProvider>
   );

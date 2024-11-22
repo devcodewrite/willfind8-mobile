@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Header, Icon, lightColors, Text } from "@rneui/themed";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { FlatList, StyleSheet, TouchableOpacity } from "react-native";
 import { Animated, View } from "react-native";
 
@@ -70,20 +70,22 @@ export default function DetailsLayout() {
   const { postState, fetchPosts, getPostById } = usePosts();
   const { posts, loading, hasMore } = postState;
 
-  useEffect(() => {
-    getPostById(post.id)
-      .then(
-        (post) => {
-          setPost(post);
-        },
-        (err) => {
+  useFocusEffect(
+    React.useCallback(() => {
+      getPostById(post.id)
+        .then(
+          (post) => {
+            setPost(post);
+          },
+          (err) => {
+            console.log("Error retrieving post:", err);
+          }
+        )
+        .catch((err) => {
           console.log("Error retrieving post:", err);
-        }
-      )
-      .catch((err) => {
-        console.log("Error retrieving post:", err);
-      });
-  }, []);
+        });
+    }, [])
+  );
 
   const loadMore = () => {
     if (hasMore && !loading) {

@@ -5,15 +5,15 @@ import {
   useWindowDimensions,
   FlatList,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { Text } from "@rneui/themed";
-import { useEffect, useRef } from "react";
-import { useRouter } from "expo-router";
+import { useCallback, useEffect, useRef } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
 
 import CategoryGrid from "@/components/ui/lists/CategoryGrid";
 import PostCardLandscape from "@/components/ui/cards/PostCardLandscape";
 import SearchBar from "@/components/inputs/SearchBar";
-import { ParentCategoryData } from "@/constants/Data";
 import { EmptyListingCard } from "@/components/ui/cards/EmptyListingCard";
 import { usePosts } from "@/lib/store/PostContext";
 import { useCategories } from "@/lib/store/CategoryContext";
@@ -30,11 +30,17 @@ export default function HomeScreen() {
     extrapolate: "clamp",
   });
 
-  const { postState, fetchPosts } = usePosts();
+  const { postState, fetchPosts, resetState } = usePosts();
   const { posts, loading, hasMore } = postState;
   const { categoryState, fetchCategories } = useCategories();
   const { categories } = categoryState;
 
+  useFocusEffect(
+    useCallback(() => {
+      resetState();
+      fetchPosts({ sort: "created_at", op: "latest", perPage: 10 });
+    }, [])
+  );
   useEffect(() => {
     fetchCategories({ parentId: 0, perPage: 20 });
   }, []);
@@ -46,19 +52,27 @@ export default function HomeScreen() {
   };
 
   const handlePostClick = (item) =>
-    router.push({ pathname: "ads/details", params: item });
+    router.push({ pathname: "/ads/details", params: item });
 
   return (
     <>
       <Animated.View
         style={[styles.stickySearchArea, { transform: [{ translateY }] }]}
       >
-        <SearchBar
+        <TouchableOpacity
           onPress={() => {
-            router.push("/menus/search");
+            router.push("/search/search");
           }}
-          placeholder="What are you looking for?"
-        />
+          style={{ width: "100%" }}
+        >
+          <SearchBar
+            onPress={() => {
+              router.push("/search/search");
+            }}
+            placeholder="What are you looking for?"
+            disabled
+          />
+        </TouchableOpacity>
       </Animated.View>
       <AnimatedFlatList
         contentContainerStyle={{

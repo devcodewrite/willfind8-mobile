@@ -1,6 +1,7 @@
 import React from "react";
 import { FlatList, StyleSheet, useWindowDimensions } from "react-native";
-import CategoryCard from "../cards/CategoryCard";
+import CategoryCard from "@/components/ui/cards/CategoryCard";
+import EmptyListingCard from "@/components/ui/cards/EmptyListingCard";
 
 export default function CategoryList({ style = {}, data }) {
   const { width } = useWindowDimensions();
@@ -18,7 +19,7 @@ export default function CategoryList({ style = {}, data }) {
       contentContainerStyle={styles.list}
       columnWrapperStyle={{gap:4}}
       showsVerticalScrollIndicator={false}
-
+      ListEmptyComponent={EmptyListingCard}
     />
   );
 }

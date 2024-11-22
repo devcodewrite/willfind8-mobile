@@ -7,7 +7,7 @@ export default function CustomAvatar({
   rounded = false,
   source,
   style,
-  color = null,
+  color,
   containerStyle = null,
   title = null,
   titleStyle = null,

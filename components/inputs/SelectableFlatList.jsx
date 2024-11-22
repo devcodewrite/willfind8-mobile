@@ -1,5 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { ListItem } from "@rneui/themed";
+import { Chip, ListItem } from "@rneui/themed";
 import React, { useState } from "react";
 import {
   FlatList,
@@ -17,9 +17,10 @@ const SelectableFlatList = ({
   selectedItems = [],
   renderText, // New prop for custom text rendering
   renderItem = null,
-  placeholder = null,
+  placeholder,
   refreshing = false,
   onRefresh,
+  ListHeaderComponent,
 }) => {
   const [selected, setSelected] = useState(selectedItems);
 
@@ -67,6 +68,7 @@ const SelectableFlatList = ({
 
   return (
     <FlatList
+      ListHeaderComponent={ListHeaderComponent}
       data={data}
       keyExtractor={(item) => item.id.toString()}
       renderItem={renderSelectItem}

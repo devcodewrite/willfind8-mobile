@@ -15,9 +15,9 @@ import SavedButton from "./SavedButton";
 
 const PostCardLandscape = ({
   title,
+  count_pictures,
   price_formatted,
   city,
-  pictures = [],
   picture,
   size = "100%",
   onPress,
@@ -32,21 +32,9 @@ const PostCardLandscape = ({
       big: string;
     };
   };
-  pictures: Array<{
-    id: number;
-    post_id: number;
-    filename: string;
-    url: {
-      full: string;
-      small: string;
-      medium: string;
-      big: string;
-    };
-  }>;
+  count_pictures: number;
   title: string;
-  category: string;
-  subCategory: string;
-  price_formatted: number;
+  price_formatted: string;
   city: {
     id: number;
     name: string;
@@ -54,7 +42,7 @@ const PostCardLandscape = ({
     longitude: string;
   };
   size: DimensionValue;
-  onPress: (event: GestureResponderEvent) => {};
+  onPress: (event: GestureResponderEvent) => void;
   style: ViewStyle;
 }): React.JSX.Element => {
   const placeholder = require("@/assets/images/Loading_icon.gif");
@@ -86,14 +74,12 @@ const PostCardLandscape = ({
         />
         {/* Count Label */}
 
-        {pictures.length > 0 ? (
-          <CountLabel
-            total={pictures.length}
-            style={styles.countLabel}
-            num={undefined}
-            variant={"dark"}
-          />
-        ) : null}
+        <CountLabel
+          total={count_pictures}
+          style={styles.countLabel}
+          num={undefined}
+          variant={"dark"}
+        />
 
         <View style={{ flex: 1 }}>
           {/* Post Details */}
