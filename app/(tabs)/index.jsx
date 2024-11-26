@@ -7,16 +7,16 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
-import { Text } from "@rneui/themed";
-import { useCallback, useEffect, useRef } from "react";
-import { useFocusEffect, useRouter } from "expo-router";
+import { Button, Text } from "@rneui/themed";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "expo-router";
 
 import CategoryGrid from "@/components/ui/lists/CategoryGrid";
 import PostCardLandscape from "@/components/ui/cards/PostCardLandscape";
 import SearchBar from "@/components/inputs/SearchBar";
 import { EmptyListingCard } from "@/components/ui/cards/EmptyListingCard";
-import { usePosts } from "@/lib/store/PostContext";
-import { useCategories } from "@/lib/store/CategoryContext";
+import usePostStore from "@/hooks/store/useFetchPosts";
+import useCategoryStore from "@/hooks/store/useFetchCategories";
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
@@ -30,29 +30,28 @@ export default function HomeScreen() {
     extrapolate: "clamp",
   });
 
-  const { postState, fetchPosts, resetState } = usePosts();
-  const { posts, loading, hasMore } = postState;
-  const { categoryState, fetchCategories } = useCategories();
-  const { categories } = categoryState;
+  const {
+    fetchCategories,
+    loading: catLoading,
+    categories,
+    error: catError,
+    categoryIds,
+  } = useCategoryStore((state) => state);
+  const [refreshing, setRefreshing] = useState(false);
+  const {
+    loading: postLoading,
+    error: postError,
+    items: PostsMap,
+    latestPostIds,
+    fetchLatestPosts,
+  } = usePostStore((state) => state);
 
-  useFocusEffect(
-    useCallback(() => {
-      resetState();
-      fetchPosts({ sort: "created_at", op: "latest", perPage: 10 });
-    }, [])
-  );
-  useEffect(() => {
-    fetchCategories({ parentId: 0, perPage: 20 });
-  }, []);
-
-  const loadMore = () => {
-    if (hasMore && !loading) {
-      fetchPosts({ sort: "created_at", op: "latest", perPage: 10 });
-    }
+  const loadMorePost = async () => {
+    await fetchLatestPosts({ sort: "created_at", op: "latest", perPage: 10 });
   };
 
   const handlePostClick = (item) =>
-    router.push({ pathname: "/ads/details", params: item });
+    router.push({ pathname: "/ads/details", params: { id: item.id } });
 
   return (
     <>
@@ -83,13 +82,19 @@ export default function HomeScreen() {
         style={styles.container}
         ListHeaderComponent={
           <>
-            <CategoryGrid size={width / 3} categories={categories} />
+            <CategoryGrid
+              size={width / 3}
+              error={catError}
+              loading={catLoading}
+              retry={() => fetchCategories({ perPage: 20 })}
+              categories={categoryIds.map((id) => categories[id])}
+            />
             <View style={{ paddingHorizontal: 10, marginTop: 10 }}>
               <Text style={{ fontWeight: "600" }}>Latest</Text>
             </View>
           </>
         }
-        ListEmptyComponent={loading ? null : EmptyListingCard}
+        ListEmptyComponent={postLoading || postError ? null : EmptyListingCard}
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -103,11 +108,33 @@ export default function HomeScreen() {
           />
         )}
         keyExtractor={(item) => item.id.toString()}
-        data={posts}
-        onEndReached={loadMore}
+        data={latestPostIds.map((id) => PostsMap[id])}
+        onEndReached={loadMorePost}
         onEndReachedThreshold={0.5}
+        refreshing={refreshing}
+        onRefresh={() => {
+          setRefreshing(true);
+          fetchCategories({ perPage: 20 });
+          fetchLatestPosts({ page: 1, op: "latest", perPage: 10 }).finally(() =>
+            setRefreshing(false)
+          );
+        }}
         ListFooterComponent={
-          loading ? <ActivityIndicator size="small" /> : null
+          postLoading ? (
+            <ActivityIndicator size="small" />
+          ) : postError ? (
+            <View style={{ paddingVertical: 50 }}>
+              <Button
+                onPress={() => {
+                  loadMorePost();
+                  fetchCategories({ perPage: 20 });
+                }}
+                type="clear"
+                title={"Try again"}
+                icon={{ name: "replay" }}
+              />
+            </View>
+          ) : null
         }
         initialNumToRender={10}
         removeClippedSubviews

@@ -1,19 +1,18 @@
 // app/_layout.js
 import { TabBarIcon } from "@/components/ui/TabBarIcon";
 import CustomAvatar from "@/components/ui/CustomAvatar";
-import { Tabs, useRouter } from "expo-router";
 import { lightColors } from "@rneui/base";
 import Logo from "@/components/ui/Logo";
-import { useCities } from "@/lib/store/CityContext";
-import { useEffect } from "react";
+import { Tabs, useRouter } from "expo-router";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useAuthModal } from "@/lib/auth/AuthModelProvider";
 
 export default function Layout() {
   const router = useRouter();
-  const { fetchCities } = useCities();
-  useEffect(() => {
-    fetchCities();
-  }, []);
+  const { user } = useAuth();
+  const { showLoginModal } = useAuthModal();
 
+  const placeholder = require("@/assets/images/willfind8-icon.png");
   return (
     <Tabs
       initialRouteName="index"
@@ -24,7 +23,12 @@ export default function Layout() {
         tabPress: (e) => {
           if (e.target?.split("-")[0] === "add") {
             e.preventDefault();
-            router.push("/ads/add");
+            router.push("../ads/add");
+          } else if (e.target?.split("-")[0] === "profile") {
+            if (!user) {
+              e.preventDefault();
+              showLoginModal();
+            }
           }
         },
       }}
@@ -75,19 +79,17 @@ export default function Layout() {
         name="profile"
         options={{
           tabBarLabel: "Profile",
+          headerShown: false,
           tabBarIcon: ({ color, focused }) => (
             <CustomAvatar
-              size={24}
+              size={28}
               rounded
               focused={focused}
               color={color}
               source={{
-                uri: "https://randomuser.me/api/portraits/women/44.jpg",
+                uri: user?.photo_url,
               }}
-              style={undefined}
-              containerStyle={undefined}
-              title={undefined}
-              titleStyle={undefined}
+              placeholder={placeholder}
             />
           ),
         }}

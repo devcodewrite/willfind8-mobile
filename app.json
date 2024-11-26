@@ -12,6 +12,9 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.willfind8"
     },
+    "facebookAppId": "1599106077378916",
+    "facebookDisplayName": "willfind8",
+    "facebookScheme": "1599106077378916",
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/willfind8-adaptive-icon.png",
@@ -34,7 +37,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/willfind8-logo.png",
+          "image": "./assets/images/willfind8-splash.png",
           "imageWidth": "100%",
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -47,7 +50,8 @@
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

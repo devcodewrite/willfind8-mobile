@@ -1,14 +1,18 @@
 // app/tabs/profile.js
+import ProfileHeader from "@/components/ui/ProfileHeader";
 import SettingOption from "@/components/ui/SettingOption";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { setStatusBarStyle } from "expo-status-bar";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { router } from "expo-router";
 import { useEffect } from "react";
-import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
+import { View, StyleSheet, Alert, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
+  const { logout, user } = useAuth();
 
-  const router = useRouter();
+  useEffect(() => {
+    if (!user) router.push("/(tabs)");
+  }, [user]);
 
   // Handler functions for each option
   const handlePersonalInfoPress = () =>
@@ -21,71 +25,80 @@ export default function ProfileScreen() {
       "Delete Account",
       "Are you sure you want to delete your account?"
     );
-  const handleTermsOfUsePress = () =>
-    Alert.alert("Terms of Use", "Open Terms of Use");
-
-  const handlePrivacyPolicyPress = () =>
-    Alert.alert("Privacy Policy", "Open Privacy Policy");
+  const handleTermsOfUsePress = () => router.push("/pages/terms");
+  const handlePrivacyPolicyPress = () => router.push("/pages/privacy");
+  const handleFAQPress = () => router.push("/pages/faq");
 
   const handleLogoutPress = () =>
     Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Yes,Logout", style: "destructive" },
+      { text: "Yes,Logout", style: "destructive", onPress: logout },
       { text: "Cancel", style: "cancel" },
     ]);
 
   return (
     <ScrollView style={styles.container}>
-      {/* Profile Header */}
+      <SafeAreaView>
+        <ProfileHeader
+          name={user?.name}
+          email={user?.email}
+          avatarUrl={user?.photo_url}
+        />
+        {/* Settings Options */}
+        <SettingOption
+          title="My Listings"
+          icon="post-add"
+          onPress={handlePersonalInfoPress}
+        />
+        <SettingOption
+          title="Notifications"
+          icon="notifications"
+          onPress={handlePersonalInfoPress}
+        />
+        {/* Divider for separating account management */}
+        <View style={styles.divider} />
 
-      {/* Settings Options */}
-      <SettingOption
-        title="My Listings"
-        icon="post-add"
-        onPress={handlePersonalInfoPress}
-      />
-      <SettingOption
-        title="Notifications"
-        icon="notifications"
-        onPress={handlePersonalInfoPress}
-      />
-      {/* Divider for separating account management */}
-      <View style={styles.divider} />
+        <SettingOption
+          title="Personal Info"
+          icon="person"
+          onPress={handlePersonalInfoPress}
+        />
+        <SettingOption
+          title="Business Info"
+          icon="business"
+          onPress={handlePersonalInfoPress}
+        />
+        <SettingOption
+          title="Sign In & Security"
+          icon="lock"
+          onPress={handleSignInSecurityPress}
+        />
 
-      <SettingOption
-        title="Personal Info"
-        icon="person"
-        onPress={handlePersonalInfoPress}
-      />
-       <SettingOption
-        title="Business Info"
-        icon="business"
-        onPress={handlePersonalInfoPress}
-      />
-      <SettingOption
-        title="Sign In & Security"
-        icon="lock"
-        onPress={handleSignInSecurityPress}
-      />
+        {/* Divider for separating account management */}
+        <View style={styles.divider} />
 
-      {/* Divider for separating account management */}
-      <View style={styles.divider} />
+        <SettingOption
+          title="Close Account"
+          icon="delete"
+          onPress={handleDeleteAccountPress}
+        />
+        <SettingOption
+          title="Terms of Use"
+          icon="description"
+          onPress={handleTermsOfUsePress}
+        />
+        <SettingOption
+          title="Privacy Policy"
+          icon="policy"
+          onPress={handlePrivacyPolicyPress}
+        />
+        <SettingOption title="FAQ" icon="info" onPress={handleFAQPress} />
 
-      <SettingOption
-        title="Close Account"
-        icon="delete"
-        onPress={handleDeleteAccountPress}
-      />
-      <SettingOption
-        title="Terms of Use"
-        icon="description"
-        onPress={handleTermsOfUsePress}
-      />
-      <SettingOption
-        title="Privacy Policy"
-        icon="policy"
-        onPress={handlePrivacyPolicyPress}
-      />
-      <SettingOption title="Logout" icon="logout" onPress={handleLogoutPress} />
+        <SettingOption
+          title="Logout"
+          icon="logout"
+          onPress={handleLogoutPress}
+        />
+      </SafeAreaView>
     </ScrollView>
   );
 }

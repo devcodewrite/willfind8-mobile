@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { Stack, useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useCities } from "@/lib/store/CityContext";
+import { Stack } from "expo-router";
 import SelectableFlatList from "@/components/inputs/SelectableFlatList";
-import { useRouteInfo, useSearchParams } from "expo-router/build/hooks";
+import { useRouteInfo } from "expo-router/build/hooks";
 import SearchBar from "@/components/inputs/SearchBar";
 import { Button, Chip } from "@rneui/themed";
 import { router } from "expo-router";
+import useCityStore from "@/hooks/store/useFetchCities";
 
 // Define the City interface
 interface City {
@@ -27,22 +26,14 @@ interface City {
 const SearchLayout = () => {
   const route = useRouteInfo();
   const [searchValue, setSearchValue] = useState<string>("");
-  const insets = useSafeAreaInsets();
-  const { cityState, fetchCities, getCityById, setSelectedCity } = useCities();
-  const { loading, cities, selectedCity, error } = cityState;
-  const [filteredCities, setFilteredCities] = useState<Array<City>>(cities);
+  const { loading, error, cities, cityIds, fetchCities } = useCityStore();
+  const [selectedCity, setSelectedCity] = useState<City>();
 
   useEffect(() => {
-    fetchCities();
+    fetchCities({ perPage: 270 });
   }, []);
 
-  useEffect(() => {
-    setFilteredCities(
-      cities.filter((city) =>
-        city.name.toLocaleLowerCase().includes(searchValue.toLocaleLowerCase())
-      )
-    );
-  }, [searchValue]);
+  useEffect(() => {}, [searchValue]);
 
   return (
     <View style={styles.container}>
@@ -80,11 +71,11 @@ const SearchLayout = () => {
           </View>
         }
         placeholder={"City list here"}
-        data={filteredCities}
-        selectedItems={[selectedCity?.id]}
-        onSelectItem={async (item: any) => {
-          if (item.length > 0) setSelectedCity(await getCityById(item[0]));
-          else setSelectedCity(null);
+        data={cityIds.map((id) => cities[id])}
+        selectedItems={selectedCity ? [selectedCity.id] : []}
+        onSelectItem={async (item: number[]) => {
+          if (item.length > 0) setSelectedCity(cities[item[0]]);
+          else setSelectedCity(undefined);
         }}
         renderText={undefined}
         onRefresh={undefined}

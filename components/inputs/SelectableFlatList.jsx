@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 
 // Custom FlatList Component with Text Callback
@@ -14,11 +15,12 @@ const SelectableFlatList = ({
   data,
   multiSelect = false,
   onSelectItem,
-  selectedItems = [],
+  selectedItems,
   renderText, // New prop for custom text rendering
   renderItem = null,
   placeholder,
-  refreshing = false,
+  refreshing,
+  loading,
   onRefresh,
   ListHeaderComponent,
 }) => {
@@ -80,7 +82,9 @@ const SelectableFlatList = ({
           {placeholder ? placeholder : `No results found`}
         </Text>
       }
-      ListFooterComponent={() => <View style={styles.footerSpace} />}
+      ListFooterComponent={() =>
+        loading && <ActivityIndicator size="small" animating />
+      }
       refreshing={refreshing}
       onRefresh={onRefresh}
     />

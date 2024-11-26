@@ -3,10 +3,10 @@ import {
   View,
   StyleSheet,
   Alert,
-  DimensionValue,
   TouchableOpacity,
   GestureResponderEvent,
   ViewStyle,
+  DimensionValue,
 } from "react-native";
 import { Card, Text, Icon, ButtonGroup, lightColors } from "@rneui/themed";
 import { Image } from "expo-image";
@@ -48,15 +48,11 @@ const PostCardLandscape = ({
   const placeholder = require("@/assets/images/Loading_icon.gif");
 
   const handleButtons = (index: number) => {
-    switch (index) {
-      case 0:
-        Alert.alert("Pressed 0");
-        break;
-
-      default:
-        break;
+    if (index === 0) {
+      Alert.alert("Pressed 0");
     }
   };
+
   return (
     <TouchableOpacity activeOpacity={0.75} style={style} onPress={onPress}>
       <Card
@@ -73,14 +69,11 @@ const PostCardLandscape = ({
           placeholderContentFit="contain"
         />
         {/* Count Label */}
-
         <CountLabel
           total={count_pictures}
           style={styles.countLabel}
-          num={undefined}
           variant={"dark"}
         />
-
         <View style={{ flex: 1 }}>
           {/* Post Details */}
           <View style={styles.infoContainer}>
@@ -91,7 +84,6 @@ const PostCardLandscape = ({
               <Text style={styles.price_formatted}>{price_formatted}</Text>
               <SavedButton onPress={() => Alert.alert("Added")} />
             </View>
-
             <View style={styles.locationContainer}>
               <Icon
                 name="map-marker"
@@ -125,7 +117,21 @@ const PostCardLandscape = ({
     </TouchableOpacity>
   );
 };
-export default memo(PostCardLandscape);
+
+const arePropsEqual = (prevProps:any, nextProps:any) => {
+  // Perform a shallow comparison on props for memoization
+  return (
+    prevProps.title === nextProps.title &&
+    prevProps.count_pictures === nextProps.count_pictures &&
+    prevProps.price_formatted === nextProps.price_formatted &&
+    prevProps.city.id === nextProps.city.id &&
+    prevProps.picture.url.medium === nextProps.picture.url.medium &&
+    prevProps.size === nextProps.size &&
+    prevProps.style === nextProps.style
+  );
+};
+
+export default memo(PostCardLandscape, arePropsEqual);
 
 const styles = StyleSheet.create({
   card: {
@@ -145,16 +151,6 @@ const styles = StyleSheet.create({
   infoContainer: {
     padding: 8,
     flex: 1,
-  },
-  breadcrumb: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  nav: {
-    fontSize: 14,
-    fontWeight: "400",
-    color: "#4682b4",
-    marginTop: 4,
   },
   title: {
     fontSize: 16,
@@ -182,11 +178,6 @@ const styles = StyleSheet.create({
     color: "#444",
     fontWeight: "400",
     marginLeft: 4,
-  },
-  verifiedIcon: {
-    position: "absolute",
-    top: 8,
-    right: 8,
   },
   countLabel: {
     position: "absolute",

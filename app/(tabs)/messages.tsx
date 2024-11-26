@@ -2,7 +2,7 @@ import { lightColors, Tab, TabView, Text } from "@rneui/themed";
 import { Tabs } from "expo-router";
 import { useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
-import ProfileListItem from "@/components/ui/cards/ImageListItem";
+import ProfileListItem from "@/components/ui/cards/ProfileListItem";
 
 const postData = [
   {

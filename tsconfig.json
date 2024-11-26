@@ -12,5 +12,5 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "app/(tabs)/index.jsx"
-, "app/ads/details.jsx", "components/inputs/SelectableFlatList.jsx"  ]
+, "app/ads/details.jsx", "components/inputs/SelectableFlatList.jsx", "components/inputs/SelectInput.tsx"  ]
 }

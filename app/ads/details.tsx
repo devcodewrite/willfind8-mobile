@@ -1,7 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Header, Icon, lightColors, Text } from "@rneui/themed";
-import { router, useFocusEffect } from "expo-router";
-import { FlatList, StyleSheet, TouchableOpacity } from "react-native";
+import { Button, Header, Icon, lightColors, Text } from "@rneui/themed";
+import { router } from "expo-router";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import { Animated, View } from "react-native";
 
 import PostCardLandscape from "@/components/ui/cards/PostCardLandscape";
@@ -12,8 +17,8 @@ import SellerAdsList from "@/components/ui/lists/SellerAdsList";
 import FeedbackChat from "@/components/ui/lists/FeedbackChat";
 import { useRouteInfo } from "expo-router/build/hooks";
 import PostSlider from "@/components/ui/cards/PostSlider";
-import { usePosts } from "@/lib/store/PostContext";
 import { EmptyListingCard } from "@/components/ui/cards/EmptyListingCard";
+import usePostStore from "@/hooks/store/useFetchPosts";
 
 interface Picture {
   id: number;
@@ -26,6 +31,7 @@ interface Picture {
     big: string;
   };
 }
+
 // Define post interface
 interface Post {
   id: number;
@@ -36,6 +42,8 @@ interface Post {
   phone: string;
   pictures?: Array<Picture>;
   count_pictures?: number;
+  user_photo_url: string;
+  negotiable: number | null;
   category: {
     id: number;
     name: string;
@@ -55,42 +63,33 @@ interface Post {
   price_formatted: string;
   created_at_formatted: string;
   picture: Picture;
+  ads_count?: number;
 }
 
 export default function DetailsLayout() {
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
   const route = useRouteInfo();
-  const [post, setPost] = useState<Post | any>({
-    ...route.params,
-    pictures: [],
-    picture: null,
-  });
+  const { id } = route.params;
+  const postId = parseInt(id?.toString());
+  const { items, relatedPostIds, loading, error, fetchRelatedPosts } =
+    usePostStore();
+  const post = items[postId];
 
-  const { postState, fetchPosts, getPostById } = usePosts();
-  const { posts, loading, hasMore } = postState;
-
-  useFocusEffect(
-    React.useCallback(() => {
-      getPostById(post.id)
-        .then(
-          (post) => {
-            setPost(post);
-          },
-          (err) => {
-            console.log("Error retrieving post:", err);
-          }
-        )
-        .catch((err) => {
-          console.log("Error retrieving post:", err);
-        });
-    }, [])
-  );
+  useEffect(() => {
+    fetchRelatedPosts(postId, {
+      sort: "created_at",
+      op: "similar",
+      perPage: 10,
+    });
+  }, [fetchRelatedPosts]);
 
   const loadMore = () => {
-    if (hasMore && !loading) {
-      fetchPosts({ sort: "created_at", op: "latest", perPage: 10 });
-    }
+    fetchRelatedPosts(postId, {
+      sort: "created_at",
+      op: "search",
+      perPage: 10,
+    });
   };
 
   // Interpolating opacity of the header based on scroll position
@@ -105,6 +104,8 @@ export default function DetailsLayout() {
     outputRange: [insets.top + 60, 0],
     extrapolate: "clamp",
   });
+
+  if (!post) return null;
 
   return (
     <View style={{ flex: 1 }}>
@@ -155,21 +156,17 @@ export default function DetailsLayout() {
         ListHeaderComponent={
           <View style={{ gap: 10 }}>
             <PostSlider
-              onImagePress={(index, pictures) => {
+              onImagePress={(index) => {
                 router.push({
-                  pathname: "/ads/fullscreen",
-                  params: {
-                    count_pictures: post.count_pictures,
-                    imageIndex: index,
-                    data: JSON.stringify(pictures),
-                  },
+                  pathname: "../ads/fullscreen",
+                  params: { imageIndex: index, postId },
                 });
               }}
               {...post}
             />
-            <DescriptionCard htmlContent={post.description.toString()} />
+            <DescriptionCard htmlContent={post?.description.toString()} />
             <ChatWithSellerCard />
-            <SellerAdsList ads={[]} seller={post} />
+            <SellerAdsList post={post} />
             <FeedbackChat />
           </View>
         }
@@ -184,8 +181,8 @@ export default function DetailsLayout() {
               style={{ paddingHorizontal: 10 }}
               onPress={() =>
                 router.push({
-                  pathname: "/ads/details",
-                  params: item,
+                  pathname: "../ads/details",
+                  params: { id: item.id },
                 })
               }
             />
@@ -196,7 +193,27 @@ export default function DetailsLayout() {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: false }
         )}
-        data={[]}
+        data={relatedPostIds.map((id) => items[id])}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loading ? (
+            <ActivityIndicator size="small" />
+          ) : error ? (
+            <View style={{ paddingVertical: 50 }}>
+              <Button
+                onPress={() => {
+                  loadMore();
+                }}
+                type="clear"
+                title={"Try again"}
+                icon={{ name: "replay" }}
+              />
+            </View>
+          ) : null
+        }
+        initialNumToRender={10}
+        removeClippedSubviews
       />
     </View>
   );

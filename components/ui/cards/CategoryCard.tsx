@@ -1,34 +1,40 @@
-import React from "react";
+import React, { memo } from "react";
 import {
   View,
   StyleSheet,
   TouchableOpacity,
   GestureResponderEvent,
+  ViewStyle,
 } from "react-native";
-import { Card, Icon, Text } from "@rneui/themed";
+import { Card, Icon, IconProps, Text } from "@rneui/themed";
 import { Image } from "expo-image";
 
-export default function CategoryCard({
-  picture_url,
-  name,
-  icon,
-  size = 40,
-  onPress,
-}: {
+type CategoryCardProps = {
   picture_url?: string;
-  icon?: object | null;
+  icon?: IconProps;
   name?: string;
-  size: number;
+  size?: number;
   onPress?: (event: GestureResponderEvent) => void;
-}): React.JSX.Element {
+  style?: ViewStyle;
+};
+
+const CategoryCard = ({
+  picture_url,
+  icon,
+  name = "Category",
+  size = 40,
+  onPress = () => {},
+  style = {},
+}: CategoryCardProps): React.JSX.Element => {
   const placeholder = require("@/assets/images/Loading_icon.gif");
+
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={style}>
       <Card containerStyle={[styles.card, { width: size, height: 100 }]}>
-        {/* Category Image */}
+        {/* Category Image or Icon */}
         {icon ? (
-          <View style={{ padding: 5 }}>
-            <Icon name={""} size={40} {...icon} />
+          <View style={styles.iconContainer}>
+            <Icon {...icon} />
           </View>
         ) : (
           <Image
@@ -36,12 +42,12 @@ export default function CategoryCard({
             source={{ uri: picture_url }}
             placeholder={placeholder}
             placeholderContentFit="contain"
-            cachePolicy={"disk"}
-            style={[styles.image, { width: "100%", height: 50 }]}
+            cachePolicy="disk"
+            style={styles.image}
           />
         )}
 
-        {/* Category Details */}
+        {/* Category Name */}
         <View style={styles.infoContainer}>
           <Text numberOfLines={2} style={styles.title}>
             {name}
@@ -50,7 +56,22 @@ export default function CategoryCard({
       </Card>
     </TouchableOpacity>
   );
-}
+};
+
+const arePropsEqual = (
+  prevProps: CategoryCardProps,
+  nextProps: CategoryCardProps
+) => {
+  return (
+    prevProps.picture_url === nextProps.picture_url &&
+    prevProps.name === nextProps.name &&
+    JSON.stringify(prevProps.icon) === JSON.stringify(nextProps.icon) &&
+    prevProps.size === nextProps.size &&
+    prevProps.style === nextProps.style
+  );
+};
+
+export default memo(CategoryCard, arePropsEqual);
 
 const styles = StyleSheet.create({
   card: {
@@ -62,12 +83,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 3,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconContainer: {
+    padding: 5,
+    justifyContent: "center",
+    alignItems: "center",
   },
   image: {
+    width: 50,
+    height: 50,
     alignSelf: "center",
   },
   infoContainer: {
     padding: 8,
+    alignItems: "center",
   },
   title: {
     fontSize: 14,

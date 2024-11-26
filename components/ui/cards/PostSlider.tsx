@@ -16,21 +16,38 @@ interface Picture {
 }
 
 // Define post interface
+// Define post interface
 interface Post {
-  id?: number;
-  title?: string;
-  phone?: string;
-  pictures: Array<Picture>;
-  city?: {
+  id: number;
+  title: string;
+  description: string;
+  price: string;
+  contact_name: string;
+  phone: string;
+  pictures?: Array<Picture>;
+  count_pictures?: number;
+  user_photo_url: string;
+  negotiable: number | null;
+  category: {
+    id: number;
+    name: string;
+    slug: string;
+    parent: {
+      id: number;
+      name: string;
+      picture_url: string;
+    };
+  };
+  city: {
     id: number;
     name: string;
     latitude: string;
     longitude: string;
   };
-  price_formatted?: string;
-  created_at_formatted?: string;
-  picture?: Picture;
-  count_pictures?: number;
+  price_formatted: string;
+  created_at_formatted: string;
+  picture: Picture;
+  ads_count?: number;
 }
 
 export default function PostSlider({
@@ -43,14 +60,14 @@ export default function PostSlider({
   picture,
   count_pictures,
   onImagePress,
-}: Post & { onImagePress: (index: number, pictures: Array<Picture>) => void }) {
+}: Post & { onImagePress: (index: number) => void }) {
   const [viewPhone, setViewPhone] = useState(false);
   const handleCall = () => {};
   return (
     <View style={styles.container}>
       <ImageSlider
         count_pictures={count_pictures}
-        onPress={(index) => onImagePress(index, pictures)}
+        onPress={(index) => onImagePress(index)}
         pictures={pictures ? pictures : picture ? [picture] : []}
       />
       <View style={styles.locationContainer}>
@@ -76,7 +93,7 @@ export default function PostSlider({
             size="sm"
             title={"Make an Offer"}
             titleStyle={{ fontWeight: "600" }}
-            buttonStyle={{ width: 190, borderWidth: 1 }}
+            containerStyle={{ width: "50%" }}
           />
           <Button
             onPress={viewPhone ? () => handleCall() : () => setViewPhone(true)}
@@ -85,7 +102,7 @@ export default function PostSlider({
             title={viewPhone ? phone : "Call"}
             radius={15}
             size="sm"
-            buttonStyle={{ width: 190 }}
+            containerStyle={{ width: "50%" }}
           />
         </View>
       </View>
@@ -134,5 +151,6 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: "row",
     gap: 10,
+    paddingHorizontal: 10,
   },
 });

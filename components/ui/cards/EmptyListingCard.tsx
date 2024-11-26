@@ -18,7 +18,7 @@ export function EmptyListingCard({
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 100,
+    paddingVertical: 50,
     alignItems: "center",
   },
   placeholder: {

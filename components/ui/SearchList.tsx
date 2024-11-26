@@ -5,26 +5,17 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  NativeSyntheticEvent,
-  StyleProp,
-  ViewStyle,
   Platform,
   GestureResponderEvent,
+  ViewStyle,
 } from "react-native";
 import { lightColors, SearchBar } from "@rneui/themed";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import api from "@/lib/apis/api";
-import { TextInputFocusEventData } from "react-native";
-import {
-  Feather,
-  FontAwesome,
-  Ionicons,
-  MaterialIcons,
-} from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { EmptyListingCard } from "./cards/EmptyListingCard";
+import usePostStore from "@/hooks/store/useFetchPosts"; // Zustand store import
+import { StyleProp } from "react-native";
 
-// Define the types for the server response
 interface Category {
   id: number;
   name: string;
@@ -44,8 +35,6 @@ interface Suggestion {
   city: City;
 }
 
-const CACHE_KEY = "SearchSuggestionsCache";
-
 const SearchList = ({
   ref,
   style,
@@ -60,7 +49,7 @@ const SearchList = ({
   style?: StyleProp<ViewStyle>;
   params?: {
     page?: number;
-    op?: "search" | "premium" | "latest" | "similar";
+    op?: "search" | "preminum" | "latest" | "similar";
     postId?: number;
     distance?: number;
     belongLoggedUser?: boolean;
@@ -79,76 +68,47 @@ const SearchList = ({
   showPlaceholder?: boolean;
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>(initialValue || "");
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
   const [focused, setFocused] = useState<boolean>(false);
-
-  // Cache stored in memory and AsyncStorage
-  const cacheRef = useRef<Record<string, Suggestion[]>>({});
+  const [hideResults, setHideResults] = useState(true);
+  // Zustand store usage
+  const {
+    loading,
+    error,
+    items,
+    searchSuggestionIds,
+    abortRequests,
+    fetchSearchSuggestions,
+  } = usePostStore();
+  const initialResults = searchSuggestionIds.map((id) => items[id]);
+  const results = useRef(initialResults);
 
   useEffect(() => {
-    // Load cache from AsyncStorage on component mount
-    const loadCache = async () => {
-      try {
-        const storedCache = await AsyncStorage.getItem(CACHE_KEY);
-        if (storedCache) {
-          cacheRef.current = JSON.parse(storedCache);
-        }
-      } catch (error) {
-        console.error("Failed to load cache from AsyncStorage:", error);
-      }
-    };
-
-    loadCache();
-  }, []);
-
-  const saveCacheToStorage = async () => {
-    try {
-      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(cacheRef.current));
-    } catch (error) {
-      console.error("Failed to save cache to AsyncStorage:", error);
-    }
-  };
-
-  const fetchSuggestions = async (query: string) => {
-    if (cacheRef.current[query]) {
-      // If query is cached, use it
-      setSuggestions(cacheRef.current[query]);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await api.get(`/api/posts?q=${query}`, {
-        params: {
-          perPage: 5,
-          op: "search",
-          sort: "created_at",
-          parentId: 0,
-          ...params,
-        },
+    if (searchQuery.length > 1) {
+      fetchSearchSuggestions({
+        ...params,
+        q: searchQuery,
+        perPage: 10,
+        op: "search",
       });
-      const { data: result } = response;
-      const { data } = result.result;
-
-      // Store in cache and persist to AsyncStorage
-      cacheRef.current[query] = data || [];
-      saveCacheToStorage();
-      setSuggestions(data || []);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching suggestions:", error);
-      setLoading(false);
+    } else {
+      // Optionally handle case when query is empty or too short
+      abortRequests();
     }
-  };
+  }, [searchQuery, initialValue, params]);
+
+  useEffect(() => {
+    if (searchQuery.length > 1) {
+      results.current = initialResults.filter((post) =>
+        post.title.toLowerCase().search(searchQuery.toLowerCase())
+      );
+    } else {
+      // Optionally handle case when query is empty or too short
+      results.current = [];
+    }
+  }, [searchQuery, params, initialValue, initialResults]);
 
   const handleSearch = (text: string) => {
     setSearchQuery(text);
-    if (text.length > 2) {
-      fetchSuggestions(text);
-    } else {
-      setSuggestions([]);
-    }
   };
 
   const highlightText = (text: string, query: string): JSX.Element[] => {
@@ -168,7 +128,11 @@ const SearchList = ({
   const renderSuggestion = ({ item }: { item: Suggestion }) => {
     return (
       <TouchableOpacity
-        onPress={() => onPress && onPress(item.title, item)}
+        onPress={() => {
+          abortRequests();
+          setSearchQuery(item.title);
+          if (onPress) onPress(item.title, item);
+        }}
         style={styles.suggestion}
       >
         <Text>
@@ -213,13 +177,16 @@ const SearchList = ({
         )}
       </View>
 
-      {suggestions.length > 0 ? (
-        <FlatList
+      {results.current.length > 0 ? (
+        <FlatList<any>
           style={styles.list}
-          data={suggestions}
+          data={results.current}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderSuggestion}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <EmptyListingCard placeholder="No result found" />
+          }
         />
       ) : showPlaceholder ? (
         <EmptyListingCard placeholder="Search result here" />

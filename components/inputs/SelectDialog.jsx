@@ -20,7 +20,7 @@ const SelectDialog = ({
   return (
     <View style={[styles.container, style]}>
       {/* Display button for the selected value */}
-      <Text style={styles.label}>{label}</Text>
+      {label && <Text style={styles.label}>{label}</Text>}
       <TouchableOpacity style={styles.selectedValueButton} onPress={onPress}>
         {value ? (
           <Text style={styles.selectedValueText}>{value}</Text>
