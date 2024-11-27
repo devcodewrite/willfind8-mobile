@@ -5,7 +5,7 @@ import {
   RichEditor,
   RichToolbar,
   actions,
-} from "@/components/react-native-pell-rich-editor";
+} from "@/components/pell-rich-editor";
 
 export default function DescriptionInput({
   inputRef,

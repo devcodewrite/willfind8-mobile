@@ -123,7 +123,7 @@ const SearchLayout = () => {
               >
                 <TextInput
                   placeholder={"Min. price"}
-                  style={{ flex: 1 }}
+                  style={{ width: "50%" }}
                   value={priceRange.min}
                   onChangeText={(text) =>
                     setPriceRange({ ...priceRange, min: parseFloat(text) || 0 })
@@ -132,7 +132,7 @@ const SearchLayout = () => {
                 />
                 <TextInput
                   placeholder={"Max. price"}
-                  style={{ flex: 1 }}
+                  style={{ width: "50%" }}
                   value={priceRange.max}
                   onChangeText={(text) =>
                     setPriceRange({ ...priceRange, max: parseFloat(text) || 0 })

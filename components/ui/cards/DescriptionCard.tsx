@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { RichEditor } from "@/components/react-native-pell-rich-editor";
+import { RichEditor } from "@/components/pell-rich-editor";
 
 export default function DescriptionCard({
   htmlContent,

@@ -39,9 +39,10 @@ const usePageStore = create<PageStore>((set, get) => ({
       const { success, message, result: page } = result;
 
       if (success) {
+       
         set((state) => {
-          const newPage = state.pages.set(slug, page);
-          return { loading: false, error: null, pages: newPage };
+          state.pages.set(slug, page);
+          return { loading: false, error: null, pages: state.pages };
         });
       } else {
         set({ error: message || "Failed to fetch cities" });

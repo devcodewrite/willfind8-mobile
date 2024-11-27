@@ -11,16 +11,12 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
-import { View } from "react-native";
-import { Image } from "expo-image";
-import { lightColors, LinearProgress } from "@rneui/themed";
 import { useEffect, useState } from "react";
 import usePostStore from "@/hooks/store/useFetchPosts";
 import useCategoryStore from "@/hooks/store/useFetchCategories";
 import { AuthModalProvider } from "@/lib/auth/AuthModelProvider";
+import LoadingScreen from "@/components/ui/LoadingScreen";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -33,45 +29,19 @@ export default function RootLayout() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCategories({ perPage: 20 }).finally(() => setLoading(false));
-  }, [fetchCategories]);
+    const loadData = async () => {
+      await fetchCategories({ perPage: 20 });
+      await fetchLatestPosts({ sort: "created_at", op: "latest", perPage: 10 });
+      setLoading(false);
+    };
 
-  useEffect(() => {
-    fetchLatestPosts({ sort: "created_at", op: "latest", perPage: 10 });
-  }, [fetchLatestPosts]);
+    loadData();
+  }, [fetchCategories, fetchLatestPosts]);
 
-  useEffect(() => {
-    if (loaded)
-      setTimeout(() => {
-        SplashScreen.hideAsync();
-      }, 1000);
-  }, [loaded]);
-
-  if (loading)
-    return (
-      <View style={{ flex: 1 }}>
-        <Image
-          style={{ height: "100%", width: "100%" }}
-          source={require("@/assets/images/willfind8-splash.png")}
-        />
-        <View
-          style={{
-            position: "absolute",
-            top: "80%",
-            height: 200,
-            alignItems: "center",
-            width: "100%",
-          }}
-        >
-          <LinearProgress
-            variant="indeterminate"
-            color="primary"
-            trackColor={lightColors.grey5}
-            style={{ width: 200 }}
-          />
-        </View>
-      </View>
-    );
+  // Display loading screen while fonts or data are loading
+  if (loading || !loaded) {
+    return <LoadingScreen />;
+  }
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
@@ -107,7 +77,10 @@ export default function RootLayout() {
             />
             <Stack.Screen
               name="search/categories_menu"
-              options={{ headerTitle: "All Categories", presentation: "modal" }}
+              options={{
+                headerTitle: "All Categories",
+                presentation: "modal",
+              }}
               getId={({ params }) => params?.parentId}
             />
             <Stack.Screen

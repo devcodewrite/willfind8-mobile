@@ -1,18 +1,35 @@
 // components/SearchBar.jsx
-import { View, StyleSheet } from "react-native";
+import {
+  View,
+  StyleSheet,
+  NativeSyntheticEvent,
+  NativeTouchEvent,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
 import { SearchBar as RNSearchBar, Button, lightColors } from "@rneui/themed";
 
 export default function SearchBar({
   placeholder = "Whare are you looking for...",
   search,
   onChangeText,
-  showFilterButton = false,
-  hideFilter = false,
+  showFilterButton,
+  hideFilter,
   onFilterPress,
   onPress,
   inputStyle,
   style,
   ...rest
+}: {
+  placeholder?: string;
+  search: string;
+  onChangeText: (text: string) => void;
+  showFilterButton?: boolean;
+  hideFilter?: boolean;
+  onFilterPress?: () => void;
+  onPress?: (e?: NativeSyntheticEvent<NativeTouchEvent>) => void;
+  inputStyle?: StyleProp<ViewStyle>;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
     <View
