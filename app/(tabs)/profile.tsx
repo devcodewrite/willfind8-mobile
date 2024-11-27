@@ -12,7 +12,7 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     if (!user) router.push("/(tabs)");
-  }, [user]);
+  }, [user, router]);
 
   // Handler functions for each option
   const handlePersonalInfoPress = () =>

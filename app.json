@@ -12,15 +12,14 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.willfind8"
     },
-    "facebookAppId": "1599106077378916",
-    "facebookDisplayName": "willfind8",
-    "facebookScheme": "1599106077378916",
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/willfind8-adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.willfind8"
+      "package": "com.willfind8",
+      "permissions": [
+      ]
     },
     "splash": {
       "image": "./assets/images/willfind8-splash.png",
@@ -63,6 +62,10 @@
       "eas": {
         "projectId": "50e78cd9-eacc-48f2-9c70-e04eb0009a0a"
       }
+    },
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/50e78cd9-eacc-48f2-9c70-e04eb0009a0a"
     }
   }
 }

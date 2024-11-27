@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, ReactNode } from "react";
 import * as SecureStore from "expo-secure-store";
+import api from "../apis/api";
 
 // Define interfaces for user data and authentication extra data
 interface UserData {
@@ -53,7 +54,9 @@ interface AuthContextProps {
   authToken: string | null;
   login: (userData: UserData, authToken: string) => void;
   logout: () => void;
+  refreshUserData: () => Promise<void>;
   isAuthenticated: boolean;
+  refreshing: boolean;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -79,6 +82,7 @@ const deleteSecureItem = async (key: string) => {
 const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<UserData | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   // On initial load, try to get user data and token from SecureStore
   useEffect(() => {
@@ -111,12 +115,46 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     await deleteSecureItem("authToken");
   };
 
+  // Refresh user data
+  const refreshUserData = async (
+    embed: string = "country,userType,gender,countPostsViews,countPosts,countSavedPosts,countSavedPosts"
+  ) => {
+    if (!authToken || !user) return;
+
+    try {
+      const { data: responseData } = await api.get(`/api/users/${user.id}`, {
+        params: embed,
+      });
+      const { success, message, result } = responseData;
+      if (!success) {
+        console.error(message);
+      } else {
+        const updatedUser: UserData = result;
+        setUser(updatedUser);
+        // Persist the updated user data
+        await setSecureItem("user", JSON.stringify(updatedUser));
+      }
+    } catch (err: any) {
+      console.error("Error refreshing user data:", err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Check if the user is authenticated
   const isAuthenticated = !!authToken;
 
   return (
     <AuthContext.Provider
-      value={{ user, authToken, login, logout, isAuthenticated }}
+      value={{
+        user,
+        authToken,
+        login,
+        logout,
+        refreshUserData,
+        isAuthenticated,
+        refreshing,
+      }}
     >
       {children}
     </AuthContext.Provider>

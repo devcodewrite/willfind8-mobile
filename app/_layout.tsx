@@ -44,32 +44,6 @@ export default function RootLayout() {
     if (loaded) SplashScreen.hideAsync();
   }, [loaded]);
 
-  if (loading)
-    return (
-      <View style={{ flex: 1 }}>
-        <Image
-          style={{ height: "100%", width: "100%" }}
-          source={require("@/assets/images/willfind8-splash.png")}
-        />
-        <View
-          style={{
-            position: "absolute",
-            top: "80%",
-            height: 200,
-            alignItems: "center",
-            width: "100%",
-          }}
-        >
-          <LinearProgress
-            variant="indeterminate"
-            color="primary"
-            trackColor={lightColors.grey5}
-            style={{ width: 200 }}
-          />
-        </View>
-      </View>
-    );
-
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <AuthProvider>
