@@ -32,7 +32,7 @@ const PostCard = ({
       big: string;
     };
   };
-  count_pictures: number;
+  count_pictures?: number;
   title: string;
   price_formatted: string;
   city?: {

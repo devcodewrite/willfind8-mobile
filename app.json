@@ -37,7 +37,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/willfind8-logo-full.png",
-          "imageWidth": 200,
+          "imageWidth": 250,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }

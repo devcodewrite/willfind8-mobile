@@ -17,7 +17,6 @@ import useCategoryStore from "@/hooks/store/useFetchCategories";
 import { AuthModalProvider } from "@/lib/auth/AuthModelProvider";
 import LoadingScreen from "@/components/ui/LoadingScreen";
 
-
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
@@ -55,7 +54,7 @@ export default function RootLayout() {
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen
               name="ads/add"
-              options={{ presentation: "containedModal" }}
+              options={{ animation: "slide_from_bottom" }}
             />
             <Stack.Screen
               name="ads/details"
@@ -81,7 +80,7 @@ export default function RootLayout() {
                 headerTitle: "All Categories",
                 presentation: "modal",
               }}
-              getId={({ params }) => params?.parentId}
+              getId={({ params }) => new Date().toISOString()}
             />
             <Stack.Screen
               name="search/results"
@@ -103,6 +102,31 @@ export default function RootLayout() {
                 headerTitle: "Filter",
               }}
             />
+            <Stack.Screen
+              name="(user)/business-info"
+              options={{ title: "Business Information" }}
+            />
+            <Stack.Screen
+              name="(user)/close-account"
+              options={{ title: "Close Account" }}
+            />
+            <Stack.Screen
+              name="(user)/mylisting"
+              options={{ title: "My Listing" }}
+            />
+            <Stack.Screen
+              name="(user)/notifications"
+              options={{ title: "Notifications" }}
+            />
+            <Stack.Screen
+              name="(user)/personal-info"
+              options={{ title: "Personal Information" }}
+            />
+            <Stack.Screen
+              name="(user)/signin-security"
+              options={{ title: "SignIn & Security" }}
+            />
+
             <Stack.Screen name="pages/terms" />
             <Stack.Screen name="+not-found" />
           </Stack>

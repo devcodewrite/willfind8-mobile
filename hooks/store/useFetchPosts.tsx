@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import api from "@/lib/apis/api";
+import { User } from "./useFetchUsers";
 
 interface Params {
   page?: number;
@@ -9,6 +10,7 @@ interface Params {
   belongLoggedUser?: boolean;
   pendingApproval?: boolean;
   archived?: boolean;
+  detailed?: number;
   embed?: string;
   sort?: string | "created_at" | "-created_at";
   perPage?: number;
@@ -29,7 +31,13 @@ interface Picture {
     big: string;
   };
 }
-// Define post interface
+
+interface Extra {
+  fieldsValues: {
+    [id: string]: { id: number; name: string; type: string; value: string };
+  };
+}
+
 interface Post {
   id: number;
   title: string;
@@ -40,6 +48,8 @@ interface Post {
   pictures?: Array<Picture>;
   count_pictures?: number;
   user_photo_url: string;
+  user: User | null;
+  user_id: number | null;
   negotiable: number | null;
   category: {
     id: number;
@@ -61,17 +71,30 @@ interface Post {
   created_at_formatted: string;
   picture: Picture;
   ads_count?: number;
+  extra: Extra | null;
 }
 
-// Define the Zustand store state and actions
+interface ApiResponse<T> {
+  success: boolean;
+  message: string | null;
+  extra: any;
+  result: {
+    data: T;
+    meta?: {
+      current_page: number;
+      last_page: number;
+    };
+  };
+}
+
 interface PostStore {
-  items: Record<number, Post>; // Centralized storage of posts
+  items: Record<number, Post>;
   latestPostIds: number[];
   searchSuggestionIds: number[];
   searchResultIds: number[];
   relatedPostIds: number[];
   sellerPostIds: number[];
-
+  postDetailsId: number | null;
   pagination: {
     latest: { page: number; hasMore: boolean };
     search: { page: number; hasMore: boolean };
@@ -79,32 +102,39 @@ interface PostStore {
     seller: { page: number; hasMore: boolean };
   };
 
-  loading: boolean;
+  loadingStates: {
+    fetchLatest: boolean;
+    fetchSuggestions: boolean;
+    fetchResults: boolean;
+    fetchRelated: boolean;
+    fetchSeller: boolean;
+    fetchPost: boolean;
+  };
+
   error: string | null;
 
-  // Actions
   fetchLatestPosts: (params?: Params) => Promise<void>;
   fetchSearchSuggestions: (params?: Params) => Promise<void>;
-  fetchSearchResults: (params?: Params) => Promise<void>;
+  fetchSearchResults: (params: Params) => Promise<void>;
   resetSearchResults: () => void;
   fetchRelatedPosts: (postId: number, params?: Params) => Promise<void>;
   fetchSellerPosts: (sellerId: number, params?: Params) => Promise<void>;
+  fetchPost: (postId: number, params?: Params) => Promise<void>;
 }
-
-// Create Zustand store
 const usePostStore = create<
   PostStore & {
     abortController: AbortController | null;
     abortRequests: () => void;
   }
->((set, get) => ({
+>((set, get: any) => ({
+  // Initial state
   items: {},
   latestPostIds: [],
   searchSuggestionIds: [],
   searchResultIds: [],
   relatedPostIds: [],
   sellerPostIds: [],
-
+  postDetailsId: null,
   pagination: {
     latest: { page: 1, hasMore: true },
     search: { page: 1, hasMore: true },
@@ -112,26 +142,35 @@ const usePostStore = create<
     seller: { page: 1, hasMore: true },
   },
 
-  loading: false,
-  error: null,
-  abortController: null, // State to manage AbortController
+  loadingStates: {
+    fetchLatest: false,
+    fetchSuggestions: false,
+    fetchResults: false,
+    fetchRelated: false,
+    fetchSeller: false,
+    fetchPost: false,
+  },
 
-  // Abort any ongoing requests
+  error: null,
+  abortController: null,
+
   abortRequests: () => {
     const { abortController } = get();
     if (abortController) {
       abortController.abort();
-      set({ abortController: null, loading: false }); // Clear the controller after aborting
+      set({ abortController: null });
     }
   },
 
-  // Helper function to process fetched posts
   processFetchedPosts: (newPosts: Post[]) => {
     const { items } = get();
     const updatedItems = { ...items };
 
     newPosts.forEach((post) => {
-      updatedItems[post.id] = post;
+      // Ensure the post structure includes extra as an empty array if not already present
+      if (!updatedItems[post.id]) {
+        updatedItems[post.id] = { ...post, extra: [] };
+      }
     });
 
     set({ items: updatedItems });
@@ -140,7 +179,11 @@ const usePostStore = create<
   // Fetch latest posts
   fetchLatestPosts: async (params?: Params) => {
     const abortController = new AbortController();
-    set({ abortController, loading: true, error: null });
+    set({
+      abortController,
+      loadingStates: { ...get().loadingStates, fetchLatest: true },
+      error: null,
+    });
 
     try {
       const { pagination } = get();
@@ -148,240 +191,259 @@ const usePostStore = create<
 
       if (!hasMore) return;
 
-      const response = await api.get("/api/posts", {
+      const response = await api.get<ApiResponse<Post[]>>("/api/posts", {
         params: { op: "latest", page, ...params },
-        signal: abortController.signal, // Pass the AbortController signal
+        signal: abortController.signal,
       });
-      const { data: result } = response;
-      const { success, message, result: data } = result;
+
+      const { success, message, result } = response.data;
 
       if (success) {
-        const { data: newPosts, meta } = data;
-
+        const { data: newPosts, meta } = result;
         get().processFetchedPosts(newPosts);
 
         set((state) => ({
           latestPostIds: Array.from(
             new Set([
               ...state.latestPostIds,
-              ...newPosts.map((post: any) => post.id),
+              ...newPosts.map((post) => post.id),
             ])
           ),
-          pagination: {
+          pagination: meta && {
             ...state.pagination,
             latest: {
               page: meta.current_page + 1,
               hasMore: meta.current_page < meta.last_page,
             },
           },
-          loading: false,
+          loadingStates: { ...state.loadingStates, fetchLatest: false },
         }));
       } else {
         set({
           error: message || "Failed to fetch latest posts",
-          loading: false,
+          loadingStates: { ...get().loadingStates, fetchLatest: false },
         });
       }
     } catch (error: any) {
-      if (error.name === "AbortError") {
-        console.log("Request aborted");
-      } else {
-        set({ error: error.message || "Something went wrong", loading: false });
-      }
-    } finally {
-      set({ abortController: null }); // Clear the AbortController after the request
-    }
-  },
-
-  // Fetch search suggestions
-  fetchSearchSuggestions: async (params?: Params) => {
-    const abortController = new AbortController();
-    set({ abortController, loading: true, error: null });
-
-    try {
-      const response = await api.get("/api/posts", {
-        params: { op: "search", ...params },
-        signal: abortController.signal, // Pass the AbortController signal
-      });
-      const { data: result } = response;
-      const { success, message, result: data } = result;
-
-      if (success) {
-        const { data: newPosts } = data;
-
-        get().processFetchedPosts(newPosts);
-
-        set((state) => ({
-          searchSuggestionIds: Array.from(
-            new Set(newPosts.map((post: any) => post.id))
-          ),
-          loading: false,
-        }));
-      } else {
+      if (error.name !== "AbortError") {
         set({
-          error: message || "Failed to fetch search suggestions",
-          loading: false,
+          error: error.message || "Something went wrong",
+          loadingStates: { ...get().loadingStates, fetchLatest: false },
         });
-      }
-    } catch (error: any) {
-      if (error.name === "AbortError") {
-        console.log("Request aborted");
-      } else {
-        set({ error: error.message || "Something went wrong", loading: false });
       }
     } finally {
       set({ abortController: null });
     }
   },
 
-  // Fetch search results
-  fetchSearchResults: async (params: any) => {
-    const { pagination } = get();
-    const { page, hasMore } = pagination.search;
+  // Fetch search suggestions
+  fetchSearchSuggestions: async (params?: Params) => {
+    set({
+      loadingStates: { ...get().loadingStates, fetchSuggestions: true },
+      error: null,
+    });
 
-    if (!hasMore) return;
-
-    set({ loading: true, error: null });
     try {
-      const response = await api.get("/api/posts", {
-        params: { page, ...params },
+      const response = await api.get<ApiResponse<Post[]>>("/api/posts", {
+        params: { op: "search", ...params },
       });
-      const { data: result } = response;
-      const { success, message, result: data } = result;
+
+      const { success, message, result } = response.data;
 
       if (success) {
-        const { data: newPosts, meta } = data;
-
-        // Process and store posts in `items`
+        const { data: newPosts } = result;
         get().processFetchedPosts(newPosts);
 
-        // Update searchResultIds and pagination
+        set((state) => ({
+          searchSuggestionIds: Array.from(
+            new Set(newPosts.map((post) => post.id))
+          ),
+          loadingStates: { ...state.loadingStates, fetchSuggestions: false },
+        }));
+      } else {
+        set({
+          error: message || "Failed to fetch search suggestions",
+          loadingStates: { ...get().loadingStates, fetchSuggestions: false },
+        });
+      }
+    } catch (error: any) {
+      set({
+        error: error.message || "Something went wrong",
+        loadingStates: { ...get().loadingStates, fetchSuggestions: false },
+      });
+    }
+  },
+
+  // Fetch search results
+  fetchSearchResults: async (params: Params) => {
+    set({
+      loadingStates: { ...get().loadingStates, fetchResults: true },
+      error: null,
+    });
+
+    try {
+      const response = await api.get<ApiResponse<Post[]>>("/api/posts", {
+        params: { op: "search", ...params },
+      });
+
+      const { success, message, result } = response.data;
+
+      if (success) {
+        const { data: newPosts } = result;
+        get().processFetchedPosts(newPosts);
+
         set((state) => ({
           searchResultIds: Array.from(
             new Set([
               ...state.searchResultIds,
-              ...newPosts.map((post: any) => post.id),
+              ...newPosts.map((post) => post.id),
             ])
           ),
-          pagination: {
-            ...state.pagination,
-            search: {
-              page: meta.current_page + 1,
-              hasMore: meta.current_page < meta.last_page,
-            },
-          },
-          loading: false,
+          loadingStates: { ...state.loadingStates, fetchResults: false },
         }));
       } else {
         set({
           error: message || "Failed to fetch search results",
-          loading: false,
+          loadingStates: { ...get().loadingStates, fetchResults: false },
         });
       }
     } catch (error: any) {
-      set({ error: error.message || "Something went wrong", loading: false });
+      set({
+        error: error.message || "Something went wrong",
+        loadingStates: { ...get().loadingStates, fetchResults: false },
+      });
     }
   },
-  resetSearchResults: () => {
-    set({ searchResultIds: [] }); // Reset searchResultIds to an empty array
-  },
+
   // Fetch related posts
-  fetchRelatedPosts: async (postId: number, params: any) => {
-    const { pagination } = get();
-    const { page, hasMore } = pagination.latest;
+  fetchRelatedPosts: async (postId: number, params?: Params) => {
+    set({
+      loadingStates: { ...get().loadingStates, fetchRelated: true },
+      error: null,
+    });
 
-    if (!hasMore) return; // Stop if no more pages
-
-    set({ loading: true, error: null });
     try {
-      const response = await api.get("/api/posts", {
-        params: { postId, op: "similar", page, ...params },
+      const response = await api.get<ApiResponse<Post[]>>("/api/posts", {
+        params: { op: "similar", postId, ...params },
       });
-      const { data: result } = response;
-      const { success, message, result: data } = result;
+
+      const { success, message, result } = response.data;
 
       if (success) {
-        const { data: newPosts, meta } = data;
-
-        // Process and store posts in `items`
+        const { data: newPosts } = result;
         get().processFetchedPosts(newPosts);
 
-        // Update relatedPostIds and pagination
         set((state) => ({
           relatedPostIds: Array.from(
             new Set([
               ...state.relatedPostIds,
-              ...newPosts.map((post: any) => post.id),
+              ...newPosts.map((post) => post.id),
             ])
           ),
-          pagination: {
-            ...state.pagination,
-            latest: {
-              page: meta.current_page + 1,
-              hasMore: meta.current_page < meta.last_page,
-            },
-          },
-          loading: false,
+          loadingStates: { ...state.loadingStates, fetchRelated: false },
         }));
       } else {
         set({
-          error: message || "Failed to fetch latest posts",
-          loading: false,
+          error: message || "Failed to fetch related posts",
+          loadingStates: { ...get().loadingStates, fetchRelated: false },
         });
       }
     } catch (error: any) {
-      set({ error: error.message || "Something went wrong", loading: false });
+      set({
+        error: error.message || "Something went wrong",
+        loadingStates: { ...get().loadingStates, fetchRelated: false },
+      });
     }
   },
 
   // Fetch seller posts
-  fetchSellerPosts: async (sellerId: number, params: any) => {
-    const { pagination } = get();
-    const { page, hasMore } = pagination.latest;
+  fetchSellerPosts: async (sellerId: number, params?: Params) => {
+    set({
+      loadingStates: { ...get().loadingStates, fetchSeller: true },
+      error: null,
+    });
 
-    if (!hasMore) return; // Stop if no more pages
-
-    set({ loading: true, error: null });
     try {
-      const response = await api.get("/api/posts", {
-        params: { op: "search", page, ...params },
+      const response = await api.get<ApiResponse<Post[]>>("/api/posts", {
+        params: { op: "seller", sellerId, ...params },
       });
-      const { data: result } = response;
-      const { success, message, result: data } = result;
+
+      const { success, message, result } = response.data;
 
       if (success) {
-        const { data: newPosts, meta } = data;
-
-        // Process and store posts in `items`
+        const { data: newPosts } = result;
         get().processFetchedPosts(newPosts);
 
-        // Update latestPostIds and pagination
         set((state) => ({
           sellerPostIds: Array.from(
             new Set([
-              ...state.latestPostIds,
-              ...newPosts.map((post: any) => post.id),
+              ...state.sellerPostIds,
+              ...newPosts.map((post) => post.id),
             ])
           ),
-          pagination: {
-            ...state.pagination,
-            latest: {
-              page: meta.current_page + 1,
-              hasMore: meta.current_page < meta.last_page,
-            },
-          },
-          loading: false,
+          loadingStates: { ...state.loadingStates, fetchSeller: false },
         }));
       } else {
         set({
-          error: message || "Failed to fetch latest posts",
-          loading: false,
+          error: message || "Failed to fetch seller posts",
+          loadingStates: { ...get().loadingStates, fetchSeller: false },
         });
       }
     } catch (error: any) {
-      set({ error: error.message || "Something went wrong", loading: false });
+      set({
+        error: error.message || "Something went wrong",
+        loadingStates: { ...get().loadingStates, fetchSeller: false },
+      });
     }
   },
+
+  // Fetch post details
+  // Fetch post details with `extra` responses
+  fetchPost: async (postId: number, params?: Params) => {
+    set({
+      loadingStates: { ...get().loadingStates, fetchPost: true },
+      error: null,
+    });
+
+    try {
+      const response = await api.get(`/api/posts/${postId}`, { params });
+
+      const { success, message, result, extra } = response.data;
+
+      if (success) {
+        const post: Post = result;
+
+        set((state) => ({
+          items: {
+            ...state.items,
+            [post.id]: {
+              ...post,
+              extra, // Store the extra data for the specific post ID
+            },
+          },
+          postDetailsId: post.id,
+          loadingStates: { ...state.loadingStates, fetchPost: false },
+        }));
+      } else {
+        set({
+          error: message || "Failed to fetch post",
+          loadingStates: { ...get().loadingStates, fetchPost: false },
+        });
+      }
+    } catch (error: any) {
+      set({
+        error: error.message || "Something went wrong",
+        loadingStates: { ...get().loadingStates, fetchPost: false },
+      });
+    }
+  },
+
+  // Reset search results
+  resetSearchResults: () => {
+    set({ searchResultIds: [] });
+  },
 }));
+
+export { Params, Post, Picture };
 
 export default usePostStore;

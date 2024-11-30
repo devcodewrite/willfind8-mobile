@@ -15,6 +15,7 @@ import { router } from "expo-router";
 import { EmptyListingCard } from "./cards/EmptyListingCard";
 import usePostStore from "@/hooks/store/useFetchPosts"; // Zustand store import
 import { StyleProp } from "react-native";
+import { useFilterStore } from "@/hooks/store/filterStore";
 
 interface Category {
   id: number;
@@ -72,13 +73,22 @@ const SearchList = ({
   const [hideResults, setHideResults] = useState(true);
   // Zustand store usage
   const {
-    loading,
+    loadingStates,
     error,
     items,
     searchSuggestionIds,
     abortRequests,
     fetchSearchSuggestions,
   } = usePostStore();
+  const { defaultFilters, setDefaultFilters } = useFilterStore();
+
+  const category = defaultFilters.find(
+    (filter) => filter.id === "c"
+  )?.selectedValue;
+  useEffect(() => {
+    if (defaultFilters.length === 0) setDefaultFilters();
+  }, [setDefaultFilters]);
+
   const initialResults = searchSuggestionIds.map((id) => items[id]);
   const results = useRef(initialResults);
 
@@ -89,6 +99,7 @@ const SearchList = ({
         q: searchQuery,
         perPage: 10,
         op: "search",
+        c: category?.id,
       });
     } else {
       // Optionally handle case when query is empty or too short
@@ -148,7 +159,13 @@ const SearchList = ({
     <View style={[styles.container, style]}>
       <View style={styles.navContainer}>
         {focused ? null : (
-          <TouchableOpacity style={styles.btn} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.btn}
+            onPress={() => {
+              results.current = [];
+              router.back();
+            }}
+          >
             <Ionicons name="chevron-back" size={28} />
           </TouchableOpacity>
         )}
@@ -158,7 +175,7 @@ const SearchList = ({
           value={searchQuery}
           onChangeText={handleSearch}
           platform={Platform.OS === "ios" ? "ios" : "android"}
-          showLoading={loading}
+          showLoading={loadingStates.fetchSuggestions}
           containerStyle={styles.searchContainer}
           inputContainerStyle={styles.inputContainer}
           autoFocus={autoFocus}

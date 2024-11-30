@@ -33,21 +33,30 @@ const CategorySelectModal: React.FC<CategorySelectModalProps> = ({
     error,
   } = useCategoryStore();
 
-  const [searchValue, setSearchValue] = useState<string>("");
-  useEffect(() => {
-    fetchCategories({ parentId, perPage: 20 });
-  }, [fetchCategories, parentId]);
-
-  const categoryList = parentId
-    ? subCategoryIds[parentId]?.map((id) => categories[id])
-    : categoryIds?.map((id) => categories[id]);
-
   const pageTitle = parentId
     ? categories[parentId]?.name || "Category"
     : "All Categories";
 
+  const [searchValue, setSearchValue] = useState<string>("");
+  const initialList = parentId
+    ? subCategoryIds[parentId]?.map((id) => categories[id])
+    : categoryIds?.map((id) => categories[id]);
+  const [categoryList, setCategoryList] = useState(initialList);
+
+  useEffect(() => {
+    fetchCategories({ parentId, perPage: 20 });
+  }, [fetchCategories, parentId]);
+
+  useEffect(() => {
+    setCategoryList(
+      initialList.filter((c) =>
+        c.name.toLowerCase().includes(searchValue.toLowerCase())
+      )
+    );
+  }, [searchValue]);
+
   return (
-    <Modal presentationStyle="formSheet" visible={visible} animationType="slide">
+    <Modal visible={visible} animationType="slide" transparent>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.overlay}>
           <View style={styles.modalContainer}>
@@ -59,13 +68,13 @@ const CategorySelectModal: React.FC<CategorySelectModalProps> = ({
                 title={"Close"}
               />
               <View>
-                <Text>{pageTitle}</Text>
+                <Text style={{ fontSize: 16 }}>{pageTitle}</Text>
               </View>
               <Button
                 onPress={() => setSearchValue("")}
                 type="clear"
                 titleStyle={{ fontWeight: "600" }}
-                title={"Clear"}
+                title={""}
               />
             </View>
             <SearchBar
@@ -97,12 +106,12 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
+    justifyContent: "flex-end",
     alignItems: "center",
   },
   modalContainer: {
     width: "100%",
-    height: "100%",
+    height: "80%",
     backgroundColor: "#ffffff",
     borderRadius: 10,
     overflow: "hidden",

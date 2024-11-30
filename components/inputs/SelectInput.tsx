@@ -14,7 +14,7 @@ const SelectInput = ({
 }: {
   label?: string;
   value?: any;
-  onChange: (value: any) => void;
+  onChange?: (value: any) => void;
   placeholder?: string;
   options: Array<any>;
 }) => {
@@ -51,7 +51,7 @@ const SelectInput = ({
           <Picker
             selectedValue={value}
             onValueChange={(itemValue) => {
-              onChange(itemValue);
+              onChange && onChange(itemValue);
               setModalVisible(false);
             }}
             style={styles.picker}
@@ -66,7 +66,7 @@ const SelectInput = ({
           </Picker>
           <Button
             onPress={() => {
-              onChange(options[0] ? options[0].value : null);
+              onChange && onChange(options[0] ? options[0].value : null);
               setModalVisible(false);
             }}
             title={"Ok"}
@@ -79,7 +79,9 @@ const SelectInput = ({
 };
 
 const styles = StyleSheet.create({
-  container: {},
+  container: {
+    width:"100%"
+  },
   selectedValueButton: {
     flexDirection: "row",
     justifyContent: "space-between",

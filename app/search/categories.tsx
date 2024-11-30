@@ -10,7 +10,7 @@ import { useFilterStore } from "@/hooks/store/filterStore";
 
 const SearchLayout = () => {
   const route = useRouteInfo();
-  const { parentId: pId } = route.params;
+  const { parentId: pId, backTo } = route.params;
   const parentId = parseInt(pId?.toString(), 10);
   const {
     subCategoryIds,
@@ -20,9 +20,14 @@ const SearchLayout = () => {
     loading,
     error,
   } = useCategoryStore();
-  const { updateSelectedValue } = useFilterStore();
+  const { updateSelectedValue, setDefaultFilters, defaultFilters } =
+    useFilterStore();
 
   const [searchValue, setSearchValue] = useState<string>("");
+
+  useEffect(() => {
+    if (defaultFilters.length === 0) setDefaultFilters();
+  }, [setDefaultFilters]);
 
   useEffect(() => {
     fetchCategories({ parentId, perPage: 20 });

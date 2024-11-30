@@ -48,7 +48,7 @@ const SearchLayout = () => {
 
   useEffect(() => {
     if (defaultFilters.length === 0) setDefaultFilters(); // Initialize default filter
-  }, []);
+  }, [setDefaultFilters]);
 
   useEffect(() => {
     setPriceRange({ min: price?.min || 0, max: price?.max || 1000000 });
@@ -106,8 +106,7 @@ const SearchLayout = () => {
                 label={undefined}
                 onPress={() =>
                   router.push({
-                    pathname: filter.path,
-                    params: { parentId: category?.selectedValue?.id },
+                    pathname: "/search/categories_menu",
                   })
                 }
               />

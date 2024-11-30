@@ -15,15 +15,36 @@ export default function ProfileScreen() {
   }, [user, router]);
 
   // Handler functions for each option
+  const handleMyListingPress = () =>
+    router.push({ pathname: "/(user)/mylisting" });
+
   const handlePersonalInfoPress = () =>
-    Alert.alert("Personal Info", "Navigate to Personal Info screen");
+    router.push({ pathname: "/(user)/personal-info" });
+
+  const handleBusinessInfoPress = () =>
+    router.push({ pathname: "/(user)/business-info" });
+
+  const handleNotificationPress = () =>
+    router.push({ pathname: "/(user)/notifications" });
+
   const handleSignInSecurityPress = () =>
-    Alert.alert("Sign In & Security", "Navigate to Sign In & Security screen");
+    router.push({ pathname: "/(user)/signin-security" });
 
   const handleDeleteAccountPress = () =>
     Alert.alert(
       "Delete Account",
-      "Are you sure you want to delete your account?"
+      "Are you sure you want to delete your account?",
+      [
+        {
+          text: "Yes",
+          style: "destructive",
+          onPress: () => router.push({ pathname: "/(user)/close-account" }),
+        },
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+      ]
     );
   const handleTermsOfUsePress = () => router.push("/pages/terms");
   const handlePrivacyPolicyPress = () => router.push("/pages/privacy");
@@ -36,23 +57,24 @@ export default function ProfileScreen() {
     ]);
 
   return (
-    <ScrollView style={styles.container}>
-      <SafeAreaView>
+    <ScrollView showsVerticalScrollIndicator={false}>
+      <SafeAreaView style={styles.container}>
         <ProfileHeader
           name={user?.name}
           email={user?.email}
           avatarUrl={user?.photo_url}
+          onPress={handlePersonalInfoPress}
         />
         {/* Settings Options */}
         <SettingOption
           title="My Listings"
           icon="post-add"
-          onPress={handlePersonalInfoPress}
+          onPress={handleMyListingPress}
         />
         <SettingOption
           title="Notifications"
           icon="notifications"
-          onPress={handlePersonalInfoPress}
+          onPress={handleNotificationPress}
         />
         {/* Divider for separating account management */}
         <View style={styles.divider} />
@@ -62,25 +84,21 @@ export default function ProfileScreen() {
           icon="person"
           onPress={handlePersonalInfoPress}
         />
-        <SettingOption
-          title="Business Info"
-          icon="business"
-          onPress={handlePersonalInfoPress}
-        />
+
         <SettingOption
           title="Sign In & Security"
           icon="lock"
           onPress={handleSignInSecurityPress}
         />
-
-        {/* Divider for separating account management */}
-        <View style={styles.divider} />
-
         <SettingOption
           title="Close Account"
           icon="delete"
           onPress={handleDeleteAccountPress}
         />
+
+        {/* Divider for separating account management */}
+        <View style={styles.divider} />
+
         <SettingOption
           title="Terms of Use"
           icon="description"
@@ -106,7 +124,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginHorizontal: 16,
+    paddingHorizontal: 16,
   },
   divider: {
     marginVertical: 16,

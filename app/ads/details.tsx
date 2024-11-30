@@ -19,52 +19,8 @@ import { useRouteInfo } from "expo-router/build/hooks";
 import PostSlider from "@/components/ui/cards/PostSlider";
 import { EmptyListingCard } from "@/components/ui/cards/EmptyListingCard";
 import usePostStore from "@/hooks/store/useFetchPosts";
-
-interface Picture {
-  id: number;
-  post_id: number;
-  filename: string;
-  url: {
-    full: string;
-    small: string;
-    medium: string;
-    big: string;
-  };
-}
-
-// Define post interface
-interface Post {
-  id: number;
-  title: string;
-  description: string;
-  price: string;
-  contact_name: string;
-  phone: string;
-  pictures?: Array<Picture>;
-  count_pictures?: number;
-  user_photo_url: string;
-  negotiable: number | null;
-  category: {
-    id: number;
-    name: string;
-    slug: string;
-    parent: {
-      id: number;
-      name: string;
-      picture_url: string;
-    };
-  };
-  city: {
-    id: number;
-    name: string;
-    latitude: string;
-    longitude: string;
-  };
-  price_formatted: string;
-  created_at_formatted: string;
-  picture: Picture;
-  ads_count?: number;
-}
+import PostSepecCard from "@/components/ui/cards/PostSepecCard";
+import LoadingBar from "@/components/ui/cards/LoadingBar";
 
 export default function DetailsLayout() {
   const insets = useSafeAreaInsets();
@@ -72,9 +28,21 @@ export default function DetailsLayout() {
   const route = useRouteInfo();
   const { id } = route.params;
   const postId = parseInt(id?.toString());
-  const { items, relatedPostIds, loading, error, fetchRelatedPosts } =
-    usePostStore();
+  const {
+    items,
+    relatedPostIds,
+    loadingStates,
+    error,
+    fetchRelatedPosts,
+    fetchPost,
+    fetchSellerPosts,
+    sellerPostIds,
+  } = usePostStore();
   const post = items[postId];
+  const userPosts = sellerPostIds.map((id) => items[id]);
+  const sepecs = useRef<
+    Array<{ id: number; name: string; value: string; type: string }>
+  >([]);
 
   useEffect(() => {
     fetchRelatedPosts(postId, {
@@ -83,6 +51,28 @@ export default function DetailsLayout() {
       perPage: 10,
     });
   }, [fetchRelatedPosts]);
+
+  useEffect(() => {
+    fetchPost(postId, { detailed: 1 });
+  }, [fetchPost]);
+
+  useEffect(() => {
+    const sps = [];
+    for (const id in post?.extra?.fieldsValues) {
+      const field = post.extra.fieldsValues[id];
+      sps.push(field);
+    }
+    sepecs.current = sps;
+  }, [post]);
+
+  useEffect(() => {
+    if (post.user_id)
+      fetchSellerPosts(post.user_id, {
+        sort: "created_at",
+        op: "latest",
+        perPage: 5,
+      });
+  }, [fetchSellerPosts]);
 
   const loadMore = () => {
     fetchRelatedPosts(postId, {
@@ -164,13 +154,17 @@ export default function DetailsLayout() {
               }}
               {...post}
             />
+            <PostSepecCard list={sepecs.current} />
             <DescriptionCard htmlContent={post?.description.toString()} />
             <ChatWithSellerCard />
-            <SellerAdsList post={post} />
-            <FeedbackChat />
+            <SellerAdsList post={post} userPosts={userPosts} />
+            <FeedbackChat data={[]} />
+            <LoadingBar loading={loadingStates.fetchPost} />
           </View>
         }
-        ListEmptyComponent={loading ? null : EmptyListingCard}
+        ListEmptyComponent={
+          loadingStates.fetchRelated ? null : EmptyListingCard
+        }
         showsVerticalScrollIndicator={false}
         renderItem={({ item }: any) => {
           return (
@@ -197,8 +191,10 @@ export default function DetailsLayout() {
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
-          loading ? (
-            <ActivityIndicator size="small" />
+          loadingStates.fetchRelated ? (
+            <View style={{ paddingVertical: 30 }}>
+              <ActivityIndicator size="small" />
+            </View>
           ) : error ? (
             <View style={{ paddingVertical: 50 }}>
               <Button

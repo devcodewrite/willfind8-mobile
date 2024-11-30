@@ -30,13 +30,6 @@ interface FilterType {
   cf?: Map<number, number | string>;
 }
 
-interface FilterOption {
-  id: number;
-  field_id: number;
-  value: string;
-  parent_id: number | null;
-}
-
 interface DefaultFilter {
   id: string;
   name: string;
@@ -60,15 +53,19 @@ const SearchLayout = () => {
     q: query?.toString(),
     op: "search",
   };
+
   const {
     searchResultIds,
     items,
-    loading,
+    loadingStates,
     error,
     fetchSearchResults,
     resetSearchResults,
   } = usePostStore();
-  const { defaultFilters, dynamicFilters } = useFilterStore();
+  const { defaultFilters, dynamicFilters, setDefaultFilters } =
+    useFilterStore();
+
+  const [searchValue, setSearchValue] = useState<string>(query?.toString());
 
   const category: DefaultFilter = defaultFilters.find(
     (filter: DefaultFilter) => filter.id === "c"
@@ -84,13 +81,15 @@ const SearchLayout = () => {
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
   useEffect(() => {
+    if (defaultFilters.length === 0) setDefaultFilters();
     resetSearchResults();
     fetchSearchResults({
       perPage: 10,
       distance: 50,
       ...filter,
+      q: searchValue,
     }).finally(() => setRefreshing(false));
-  }, [filter, route]);
+  }, [filter, route, searchValue]);
 
   useEffect(() => {
     const cf = dynamicFilters.reduce<Map<number, number | string>>(
@@ -150,14 +149,16 @@ const SearchLayout = () => {
         >
           <SearchBar
             onPress={() => {
-              router.push({ pathname: "../search/search", params: { query } });
+              if (query) router.dismiss();
+              else
+                router.push({
+                  pathname: "../search/search",
+                  params: { query },
+                });
             }}
             placeholder="What are you looking for?"
-            search={query}
-            onChangeText={undefined}
-            onFilterPress={undefined}
-            inputStyle={undefined}
-            style={undefined}
+            search={searchValue}
+            onChangeText={setSearchValue}
           />
         </TouchableOpacity>
         <TouchableOpacity
@@ -257,7 +258,9 @@ const SearchLayout = () => {
             ) : null}
           </ScrollView>
         }
-        ListEmptyComponent={loading ? null : EmptyListingCard}
+        ListEmptyComponent={
+          loadingStates.fetchResults ? null : EmptyListingCard
+        }
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <PostCard
@@ -286,7 +289,7 @@ const SearchLayout = () => {
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
-          loading ? (
+          loadingStates.fetchResults ? (
             <View style={styles.loader}>
               <ActivityIndicator size="small" />
             </View>

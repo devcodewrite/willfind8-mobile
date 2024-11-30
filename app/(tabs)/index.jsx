@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Button, Text } from "@rneui/themed";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "expo-router";
 
 import CategoryGrid from "@/components/ui/lists/CategoryGrid";
@@ -39,7 +39,7 @@ export default function HomeScreen() {
   } = useCategoryStore((state) => state);
   const [refreshing, setRefreshing] = useState(false);
   const {
-    loading: postLoading,
+    loadingStates,
     error: postError,
     items: PostsMap,
     latestPostIds,
@@ -94,7 +94,7 @@ export default function HomeScreen() {
             </View>
           </>
         }
-        ListEmptyComponent={postLoading || postError ? null : EmptyListingCard}
+        ListEmptyComponent={loadingStates.fetchLatest || postError ? null : EmptyListingCard}
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -120,7 +120,7 @@ export default function HomeScreen() {
           );
         }}
         ListFooterComponent={
-          postLoading ? (
+          loadingStates.fetchLatest ? (
             <ActivityIndicator size="small" />
           ) : postError ? (
             <View style={{ paddingVertical: 50 }}>

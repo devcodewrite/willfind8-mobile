@@ -263,11 +263,9 @@ export default class RichTextEditor extends Component {
           keyboardDisplayRequiresUserAction={false}
           nestedScrollEnabled={!useContainer}
           style={[styles.webview, style]}
-          {...rest}
           ref={that.setRef}
           onMessage={that.onMessage}
           originWhitelist={['*']}
-          dataDetectorTypes={["none"]}
           domStorageEnabled={false}
           bounces={false}
           javaScriptEnabled={true}

@@ -76,6 +76,7 @@ const styles = StyleSheet.create({
   },
   adImage: {
     height: 80,
+    width: "100%",
   },
   price: {
     marginTop: 5,

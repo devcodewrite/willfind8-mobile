@@ -9,55 +9,10 @@ import {
 import { Badge } from "@rneui/themed";
 import SimplePostCard from "../cards/SimplePostCard";
 import { Image } from "expo-image";
-import usePostStore from "@/hooks/store/useFetchPosts";
+import usePostStore, { Post } from "@/hooks/store/useFetchPosts";
 import { router } from "expo-router";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useAuthModal } from "@/lib/auth/AuthModelProvider";
-
-interface Picture {
-  id: number;
-  post_id: number;
-  filename: string;
-  url: {
-    full: string;
-    small: string;
-    medium: string;
-    big: string;
-  };
-}
-// Define post interface
-interface Post {
-  id: number;
-  title: string;
-  description: string;
-  price: string;
-  contact_name: string;
-  phone: string;
-  pictures?: Array<Picture>;
-  count_pictures?: number;
-  user_photo_url: string;
-  negotiable: number | null;
-  category: {
-    id: number;
-    name: string;
-    slug: string;
-    parent: {
-      id: number;
-      name: string;
-      picture_url: string;
-    };
-  };
-  city: {
-    id: number;
-    name: string;
-    latitude: string;
-    longitude: string;
-  };
-  price_formatted: string;
-  created_at_formatted: string;
-  picture: Picture;
-  ads_count?: number;
-}
 
 export default function SellerAdsList({
   post,
@@ -69,9 +24,11 @@ export default function SellerAdsList({
   const placeholder = require("@/assets/images/Loading_icon.gif");
   const { user } = useAuth();
   const { showLoginModal } = useAuthModal();
+
   const handleProfileClick = () => {
     if (!user) showLoginModal();
   };
+
   return (
     <View style={styles.container}>
       {/* Seller Info Section */}

@@ -8,13 +8,15 @@ const ProfileHeader = ({
   name,
   email,
   avatarUrl,
+  onPress,
 }: {
   name?: string;
   email?: string;
   avatarUrl?: string | null;
+  onPress?: (e: any) => void;
 }) => {
   return (
-    <TouchableOpacity style={styles.headerContainer}>
+    <TouchableOpacity onPress={onPress} style={styles.headerContainer}>
       <CustomAvatar
         size={100}
         rounded

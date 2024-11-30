@@ -1,12 +1,9 @@
 // components/MainFilter.jsx
-import { Asset } from "expo-asset";
 import { Image } from "expo-image";
-import { View, StyleSheet, DimensionValue } from "react-native";
+import { View, StyleSheet } from "react-native";
 
 export default function Logo({ size }: { size?: any }) {
-  const image = Asset.fromModule(
-    require("@/assets/images/willfind8-logo-full.png")
-  ).uri;
+  const image = require("@/assets/images/willfind8-logo-full.png");
   return (
     <View style={styles.container}>
       <Image

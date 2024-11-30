@@ -1,3 +1,4 @@
+import { EmptyListingCard } from "@/components/ui/cards/EmptyListingCard";
 import usePageStore from "@/hooks/store/useFetchPages";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
@@ -27,8 +28,10 @@ export default function PageLayout() {
         <View style={styles.container}>
           <ActivityIndicator size={"large"} animating />
         </View>
-      ) : (
+      ) : faq ? (
         <WebView source={{ html: page }} />
+      ) : (
+        <EmptyListingCard placeholder="Couldn't load data!" />
       )}
     </View>
   );

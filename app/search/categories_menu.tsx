@@ -31,10 +31,15 @@ const SearchLayout = () => {
 
   const [subCategoryList, setSubCategoryList] = useState(initialList);
   const pageTitle = parentId ? categories[parentId].name : "All Categories";
-  const { defaultFilters, updateSelectedValue } = useFilterStore();
+  const { defaultFilters, updateSelectedValue, setDefaultFilters } =
+    useFilterStore();
   const selectCategory = defaultFilters.find(
-    (filter) => filter.name === "Categories"
+    (filter) => filter.id === "c"
   )?.selectedValue;
+
+  useEffect(() => {
+    if (defaultFilters.length === 0) setDefaultFilters();
+  }, [setDefaultFilters]);
 
   useEffect(() => {
     if (initialList)
@@ -45,7 +50,7 @@ const SearchLayout = () => {
             .includes(searchValue.toLocaleLowerCase())
         )
       );
-  }, [searchValue, subCategoryIds]);
+  }, [searchValue, subCategoryIds, parentId]);
 
   return (
     <View style={styles.container}>
@@ -66,15 +71,11 @@ const SearchLayout = () => {
         placeholder="Search category ?"
         search={searchValue}
         onChangeText={setSearchValue}
-        onFilterPress={undefined}
-        onPress={undefined}
-        inputStyle={undefined}
-        style={undefined}
       />
       {/* Display Search Results */}
       <CategoryList
         selected={selectCategory}
-        data={subCategoryList}
+        data={loading ? [] : subCategoryList}
         loading={loading}
         error={error}
         retry={async () => {
@@ -83,9 +84,9 @@ const SearchLayout = () => {
         onPress={(item) => {
           if (parentId) {
             updateSelectedValue("c", item);
-            router.dismiss(2);
+            router.back();
           } else {
-            router.push({
+            router.dismissTo({
               pathname: "../search/categories_menu",
               params: { parentId: item.id },
             });

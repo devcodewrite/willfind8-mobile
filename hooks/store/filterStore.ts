@@ -71,7 +71,7 @@ export const useFilterStore = create<FilterState>((set, get) => ({
           label: cat.name,
           value: cat.id,
         })),
-        selectedValue: 0, // Default selected categories
+        selectedValue: null, // Default selected categories
       },
       {
         id: "l",

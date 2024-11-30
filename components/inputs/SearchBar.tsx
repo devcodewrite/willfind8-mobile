@@ -23,7 +23,7 @@ export default function SearchBar({
 }: {
   placeholder?: string;
   search: string;
-  onChangeText: (text: string) => void;
+  onChangeText?: (text: string) => void;
   showFilterButton?: boolean;
   hideFilter?: boolean;
   onFilterPress?: () => void;
