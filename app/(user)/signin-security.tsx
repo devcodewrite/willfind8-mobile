@@ -1,8 +1,7 @@
 import { LabelList } from "@/components/ui/lists/LabelList";
 import { Alert, StyleSheet, View } from "react-native";
-import { useFormik } from "formik";
-import * as Yup from "yup";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { router } from "expo-router";
 
 export default function UserScreen() {
   const { user } = useAuth();
@@ -11,13 +10,14 @@ export default function UserScreen() {
       title: "Email",
       value: user?.email,
       rightIcon: { name: "chevron-right" },
-      onPress: () => Alert.alert("Open Email"),
+      onPress: () => router.push("/(user)/email"),
     },
     {
       title: "Phone",
-      value: user?.phone,
+      value: user?.phone_intl,
+      subtitle: user?.phone_hidden ? "Not visible to public" : "",
       rightIcon: { name: "chevron-right" },
-      onPress: () => Alert.alert("Open Phone"),
+      onPress: () => router.push("/(user)/phone"),
     },
   ];
 
@@ -25,7 +25,7 @@ export default function UserScreen() {
     <View style={styles.container}>
       <LabelList heading="EMAIL & PHONE NUMBER" data={data} />
       <LabelList
-        onPress={() => Alert.alert("Open Change Phone")}
+        onPress={() => router.push("/(user)/change-password")}
         value={"Change Password"}
         rightIcon={{ name: "chevron-right" }}
       />

@@ -160,8 +160,8 @@ export const AuthModalProvider: React.FC<AuthModalProviderProps> = ({
                   icon={{ name: "email", color: "white" }}
                   title={
                     modalType === "login"
-                      ? "Sign in with Email"
-                      : "Sign up with Email"
+                      ? "Sign in with Email or Phone"
+                      : "Sign up with Email or Phone"
                   }
                   buttonStyle={{
                     width: "100%",

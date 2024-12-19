@@ -1,101 +1,121 @@
 import { lightColors, Tab, TabView, Text } from "@rneui/themed";
-import { Tabs } from "expo-router";
-import { useState } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { router, Tabs, useFocusEffect } from "expo-router";
+import { useState, useEffect, useCallback } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  NativeSyntheticEvent,
+  StyleSheet,
+  TextInputChangeEventData,
+  View,
+} from "react-native";
 import ProfileListItem from "@/components/ui/cards/ProfileListItem";
-
-const postData = [
-  {
-    id: "1",
-    imageUrl: "https://example.com/car.jpg",
-    images: [
-      "https://randomuser.me/api/portraits/women/44.jpg",
-      "https://randomuser.me/api/portraits/men/44.jpg",
-      "https://randomuser.me/api/portraits/women/3.jpg",
-    ],
-    title: "Toyota Camry 2015 4L Engine",
-    price: "GH₵35,000",
-    category: "AutoMobiles",
-    subCategory: "Cars",
-    location: "Accra",
-    isVerified: true,
-  },
-  {
-    id: "2",
-    imageUrl: "https://example.com/phone.jpg",
-    images: [
-      "https://randomuser.me/api/portraits/women/44.jpg",
-      "https://randomuser.me/api/portraits/men/44.jpg",
-      "https://randomuser.me/api/portraits/women/3.jpg",
-    ],
-    title: "iPhone 12 Pro Max",
-    price: "GH₵7,500",
-    category: "Electronics",
-    subCategory: "Mobile Phone & Accessories",
-    location: "Kumasi",
-    isVerified: false,
-  },
-  {
-    id: "3",
-    imageUrl: "https://example.com/phone.jpg",
-    images: [
-      "https://randomuser.me/api/portraits/women/44.jpg",
-      "https://randomuser.me/api/portraits/men/44.jpg",
-      "https://randomuser.me/api/portraits/women/3.jpg",
-    ],
-    title: "iPhone 12 Pro Max",
-    price: "GH₵7,500",
-    category: "Electronics",
-    subCategory: "Mobile Phone & Accessories",
-    location: "Kumasi",
-    isVerified: false,
-  },
-  {
-    id: "4",
-    imageUrl: "https://example.com/car.jpg",
-    images: [
-      "https://randomuser.me/api/portraits/women/44.jpg",
-      "https://randomuser.me/api/portraits/men/44.jpg",
-      "https://randomuser.me/api/portraits/women/3.jpg",
-    ],
-    title: "Toyota Camry 2015",
-    price: "GH₵35,000",
-    category: "AutoMobiles",
-    subCategory: "Cars",
-    location: "Accra",
-    isVerified: true,
-  },
-  {
-    id: "5",
-    imageUrl: "https://example.com/car.jpg",
-    images: [
-      "https://randomuser.me/api/portraits/women/44.jpg",
-      "https://randomuser.me/api/portraits/men/44.jpg",
-      "https://randomuser.me/api/portraits/women/3.jpg",
-    ],
-    title: "Toyota Camry 2017",
-    price: "GH₵36,000",
-    category: "AutoMobiles",
-    subCategory: "Cars",
-    location: "Accra",
-    isVerified: true,
-  },
-  // Add more posts as needed
-];
+import { Thread, useThreadsStore } from "@/hooks/store/useFetchThreads";
+import { EmptyListingCard } from "@/components/ui/cards/EmptyListingCard";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 export default function MessagesScreen() {
   const [index, setIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    threads,
+    unreadIds,
+    importantIds,
+    isLoading,
+    hasMore,
+    fetchThreads,
+    isLoadingMore,
+  } = useThreadsStore();
 
-  const [searchResults, setSearchResults] = useState(null);
-  const [search, setSearch] = useState("");
-  // Function to handle search
-  const handleSearch = (query: string) => {
-    if (query) {
+  const { refreshUserData } = useAuth();
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshUserData();
+    }, [refreshUserData])
+  );
+
+  useEffect(() => {
+    if (index === 0) {
+      fetchThreads(); // Fetch all threads for All Messages tab
+    } else if (index === 1) {
+      fetchThreads("unread"); // Fetch unread threads for Unread tab
+    } else if (index === 2) {
+      fetchThreads("important"); // Fetch important threads for Important tab
+    }
+  }, [index, fetchThreads]);
+
+  const handleMessageClicked = (thread: Thread) => {
+    router.push({
+      pathname: "/ads/chat",
+      params: { id: thread.id, postId: thread.post_id },
+    });
+  };
+
+  const renderItem = ({ item }: { item: Thread }) => {
+    return (
+      <ProfileListItem
+        title={item.subject}
+        imageUrl={item.p_creator.photo_url}
+        name={item.p_creator.name}
+        message={item.latest_message?.body}
+        date={item.updated_at}
+        onPress={() => handleMessageClicked(item)}
+      />
+    );
+  };
+
+  const renderFooter = () => {
+    if (isLoading) {
+      return (
+        <View style={{ paddingVertical: 20, justifyContent: "center" }}>
+          <ActivityIndicator animating />
+        </View>
+      );
+    }
+
+    if (!hasMore) {
+      return <EmptyListingCard placeholder="No more messages" />;
+    }
+
+    return null;
+  };
+
+  const loadMore = () => {
+    if (hasMore && !isLoadingMore) {
+      fetchThreads();
     }
   };
 
-  // Handler for clicking on a search item
-  const handleItemPress = async (item: string) => {};
+  const filterThreads = (filter: "all" | "unread" | "important") => {
+    let filteredThreads = threads;
+
+    // Filter by unread or important if applicable
+    if (filter === "unread") {
+      filteredThreads = threads.filter((thread) => unreadIds.has(thread.id));
+    } else if (filter === "important") {
+      filteredThreads = threads.filter((thread) => importantIds.has(thread.id));
+    }
+
+    // Filter by search query if there's one
+    if (searchQuery) {
+      filteredThreads = filteredThreads.filter(
+        (thread) =>
+          thread.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          thread.subject.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return filteredThreads;
+  };
+
+  const handleSearchChange = (
+    e: NativeSyntheticEvent<TextInputChangeEventData>
+  ) => {
+    setSearchQuery(e.nativeEvent.text);
+  };
+
+  const isSearching = searchQuery.length > 0;
 
   return (
     <View style={styles.container}>
@@ -104,65 +124,106 @@ export default function MessagesScreen() {
           headerTitle: "Messages",
           headerSearchBarOptions: {
             placeholder: "Search message",
+            onChangeText: handleSearchChange,
           },
         }}
       />
 
-      <Tab
-        value={index}
-        onChange={(e) => setIndex(e)}
-        indicatorStyle={{
-          height: 3,
-          backgroundColor: lightColors.primary,
-        }}
-        variant="default"
-        containerStyle={{ backgroundColor: lightColors.background }}
-      >
-        <Tab.Item
-          title="All Inbox"
-          titleStyle={{ fontSize: 12, color: "black" }}
-          icon={{
-            name: "mail-open",
-            type: "ionicon",
-            color: lightColors.primary,
-          }}
+      {/* If searching, hide the tabs and display the list of threads */}
+      {isSearching ? (
+        <FlatList
+          data={filterThreads("all")}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={renderFooter}
         />
-        <Tab.Item
-          title="Unread"
-          titleStyle={{ fontSize: 12, color: "black" }}
-          icon={{ name: "mail", type: "ionicon", color: lightColors.primary }}
-        />
-      </Tab>
+      ) : (
+        <View style={{ flex: 1 }}>
+          <Tab
+            value={index}
+            onChange={(e) => setIndex(e)}
+            indicatorStyle={{
+              height: 3,
+              backgroundColor: lightColors.primary,
+            }}
+            variant="default"
+            containerStyle={{ backgroundColor: lightColors.background }}
+          >
+            <Tab.Item
+              title="All Messages"
+              titleStyle={{ fontSize: 12, color: "black" }}
+              icon={{
+                name: "mail-open",
+                type: "ionicon",
+                color: lightColors.primary,
+              }}
+            />
+            <Tab.Item
+              title="Unread"
+              titleStyle={{ fontSize: 12, color: "black" }}
+              icon={{
+                name: "mail",
+                type: "ionicon",
+                color: lightColors.primary,
+              }}
+            />
+            <Tab.Item
+              title="Important"
+              titleStyle={{ fontSize: 12, color: "black" }}
+              icon={{
+                name: "star",
+                type: "ionicon",
+                color: lightColors.primary,
+              }}
+            />
+          </Tab>
 
-      <TabView value={index} onChange={setIndex} animationType="spring">
-        <TabView.Item style={{ width: "100%" }}>
-          <FlatList
-            data={searchResults}
-            contentContainerStyle={styles.list}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => <ProfileListItem {...item} />}
-            ListEmptyComponent={
-              <Text style={styles.noResultsText}>No results found</Text>
-            }
-            ListFooterComponent={() => <View style={styles.footerSpace} />}
-          />
-        </TabView.Item>
+          <TabView value={index} onChange={setIndex} animationType="spring">
+            <TabView.Item style={{ width: "100%" }}>
+              <FlatList
+                data={filterThreads("all")}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderItem}
+                contentContainerStyle={styles.list}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={renderFooter}
+              />
+            </TabView.Item>
 
-        <TabView.Item style={{ width: "100%" }}>
-          <FlatList
-            data={searchResults}
-            contentContainerStyle={styles.list}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => <ProfileListItem {...item} />}
-            ListEmptyComponent={
-              <Text style={styles.noResultsText}>No results found</Text>
-            }
-            ListFooterComponent={() => <View style={styles.footerSpace} />}
-          />
-        </TabView.Item>
-      </TabView>
+            <TabView.Item style={{ width: "100%" }}>
+              <FlatList
+                data={filterThreads("unread")}
+                contentContainerStyle={styles.list}
+                keyExtractor={(item) => item.id.toString()}
+                showsVerticalScrollIndicator={false}
+                renderItem={renderItem}
+                ListEmptyComponent={
+                  <Text style={styles.noResultsText}>No unread threads</Text>
+                }
+                ListFooterComponent={() => <View style={styles.footerSpace} />}
+              />
+            </TabView.Item>
+
+            <TabView.Item style={{ width: "100%" }}>
+              <FlatList
+                data={filterThreads("important")}
+                contentContainerStyle={styles.list}
+                keyExtractor={(item) => item.id.toString()}
+                showsVerticalScrollIndicator={false}
+                renderItem={renderItem}
+                ListEmptyComponent={
+                  <Text style={styles.noResultsText}>No important threads</Text>
+                }
+                ListFooterComponent={() => <View style={styles.footerSpace} />}
+              />
+            </TabView.Item>
+          </TabView>
+        </View>
+      )}
     </View>
   );
 }
@@ -175,6 +236,7 @@ const styles = StyleSheet.create({
   },
   list: {
     margin: 12,
+    flex: 1,
   },
   footerSpace: {
     padding: 20,

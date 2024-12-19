@@ -10,8 +10,8 @@ import {
   ViewStyle,
 } from "react-native";
 import { Input, lightColors, Text } from "@rneui/themed";
-import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { ViewProps } from "react-native-svg/lib/typescript/fabric/utils";
+import { IconNode } from "@rneui/base";
 
 // Validate input on change
 export const validateInput = (
@@ -52,24 +52,32 @@ export default function TextInput({
   onBlur,
   left,
   leftContianer,
+  inputContainer,
+  containerStyle,
+  rightIcon,
+  multiline,
 }: {
   value?: string | number;
   label?: string;
   placeholder?: string;
+  multiline?: boolean;
   onChangeText?: (text: string) => void;
   inputMode?: InputModeOptions;
   errorMessage?: string;
   disabled?: boolean;
   secureTextEntry?: boolean;
   style?: StyleProp<ViewStyle>;
+  containerStyle?: StyleProp<ViewStyle>;
+  inputContainer?: StyleProp<ViewStyle>;
   onBlur?: (e?: NativeSyntheticEvent<TextInputFocusEventData>) => void;
   left?: ReactNode;
+  rightIcon?: IconNode;
   leftContianer?: StyleProp<ViewStyle>;
 }) {
   const [secured, setSecured] = useState(secureTextEntry);
 
   return (
-    <View style={{ width: "100%" }}>
+    <View style={[{ width: "100%" }, containerStyle && containerStyle]}>
       {left && (
         <Text style={[styles.label, { color: lightColors.grey3 }]}>
           {label}
@@ -90,17 +98,20 @@ export default function TextInput({
             style,
             left ? { height: 50 } : null,
           ]}
-          inputContainerStyle={styles.inputContainer}
+          inputContainerStyle={[styles.inputContainer, inputContainer]}
           inputStyle={styles.input}
           disabled={disabled}
           secureTextEntry={secured}
+          multiline={multiline}
           onBlur={onBlur}
           rightIcon={
-            secureTextEntry && {
-              name: secured ? "eye-slash" : "eye",
-              type: "font-awesome",
-              onPress: () => setSecured(!secured),
-            }
+            rightIcon
+              ? rightIcon
+              : secureTextEntry && {
+                  name: secured ? "eye-slash" : "eye",
+                  type: "font-awesome",
+                  onPress: () => setSecured(!secured),
+                }
           }
         />
       </View>

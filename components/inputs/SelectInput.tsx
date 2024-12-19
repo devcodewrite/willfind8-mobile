@@ -11,12 +11,14 @@ const SelectInput = ({
   onChange,
   placeholder,
   options,
+  errorMessage,
 }: {
   label?: string;
   value?: any;
   onChange?: (value: any) => void;
   placeholder?: string;
   options: Array<any>;
+  errorMessage?: string;
 }) => {
   const [isModalVisible, setModalVisible] = useState(false);
 
@@ -38,6 +40,7 @@ const SelectInput = ({
         )}
         <Icon name="chevron-down" type="feather" />
       </TouchableOpacity>
+      {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
 
       {/* Modal with the Picker component */}
       <Modal
@@ -80,7 +83,7 @@ const SelectInput = ({
 
 const styles = StyleSheet.create({
   container: {
-    width:"100%"
+    width: "100%",
   },
   selectedValueButton: {
     flexDirection: "row",
@@ -107,6 +110,11 @@ const styles = StyleSheet.create({
     fontWeight: "200",
     paddingHorizontal: 8,
     color: "#aaa",
+  },
+  error: {
+    fontSize: 14,
+    paddingHorizontal: 8,
+    color: "red",
   },
   modal: {
     justifyContent: "center",

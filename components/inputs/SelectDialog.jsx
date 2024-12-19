@@ -16,6 +16,7 @@ const SelectDialog = ({
   onPress,
   placeholder,
   loading = false,
+  errorMessage,
 }) => {
   return (
     <View style={[styles.container, style]}>
@@ -33,6 +34,7 @@ const SelectDialog = ({
           <Icon name="chevron-down" type="feather" />
         )}
       </TouchableOpacity>
+      {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
     </View>
   );
 };
@@ -64,6 +66,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     marginBottom: 4,
     color: "#888",
+  },
+  error: {
+    fontSize: 14,
+    paddingHorizontal: 8,
+    marginBottom: 4,
+    color: "red",
   },
 });
 

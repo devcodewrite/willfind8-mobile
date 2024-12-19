@@ -9,7 +9,7 @@ import {
 import { Badge } from "@rneui/themed";
 import SimplePostCard from "../cards/SimplePostCard";
 import { Image } from "expo-image";
-import usePostStore, { Post } from "@/hooks/store/useFetchPosts";
+import usePostStore, { Extra, Post } from "@/hooks/store/useFetchPosts";
 import { router } from "expo-router";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useAuthModal } from "@/lib/auth/AuthModelProvider";
@@ -17,18 +17,25 @@ import { useAuthModal } from "@/lib/auth/AuthModelProvider";
 export default function SellerAdsList({
   post,
   userPosts,
+  extra,
 }: {
   post: Post;
   userPosts?: Array<Post>;
+  extra?: Extra | null;
 }) {
   const placeholder = require("@/assets/images/Loading_icon.gif");
   const { user } = useAuth();
   const { showLoginModal } = useAuthModal();
 
   const handleProfileClick = () => {
-    if (!user) showLoginModal();
+    if (!user) return showLoginModal();
+    router.push({
+      pathname: "../ads/seller",
+      params: { id: post.id },
+    });
   };
 
+  if (!post) return;
   return (
     <View style={styles.container}>
       {/* Seller Info Section */}
@@ -45,10 +52,10 @@ export default function SellerAdsList({
         />
         <View style={styles.sellerDetails}>
           <Text style={styles.sellerName}>{post?.contact_name}</Text>
-          {post.ads_count && (
+          {extra && (
             <View style={styles.sellerStats}>
               <Badge
-                value={`${post.ads_count} active ads`}
+                value={`${extra.count[0] ?? 0} active ads`}
                 badgeStyle={styles.badge}
                 textStyle={styles.badgeText}
               />
@@ -83,9 +90,12 @@ export default function SellerAdsList({
           style={styles.adsList}
           ListFooterComponent={
             userPosts.length > 0 ? (
-              <TouchableOpacity style={styles.seeAllButton}>
+              <TouchableOpacity
+                onPress={handleProfileClick}
+                style={styles.seeAllButton}
+              >
                 <Text style={styles.seeAllText}>
-                  See all seller's ads ({post.ads_count}) ➔
+                  See all seller's ads ({extra?.count[0] ?? 0}) ➔
                 </Text>
               </TouchableOpacity>
             ) : null

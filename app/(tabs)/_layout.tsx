@@ -11,8 +11,8 @@ export default function Layout() {
   const router = useRouter();
   const { user } = useAuth();
   const { showLoginModal } = useAuthModal();
+  const placeholder = require("@/assets/images/icons8-test-account-96.png");
 
-  const placeholder = require("@/assets/images/willfind8-icon.png");
   return (
     <Tabs
       initialRouteName="index"
@@ -21,13 +21,15 @@ export default function Layout() {
       }}
       screenListeners={{
         tabPress: (e) => {
-          if (e.target?.split("-")[0] === "add") {
-            e.preventDefault();
-            router.push("../ads/add");
-          } else if (e.target?.split("-")[0] === "profile") {
+          if (e.target?.split("-")[0] !== "index") {
             if (!user) {
               e.preventDefault();
-              showLoginModal();
+              return showLoginModal();
+            }
+  
+            if (e.target?.split("-")[0] === "add") {
+              e.preventDefault();
+              router.push("../ads/add");
             }
           }
         },

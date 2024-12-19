@@ -19,10 +19,12 @@ export default function SearchBar({
   onPress,
   inputStyle,
   style,
+  disabled,
   ...rest
 }: {
   placeholder?: string;
   search: string;
+  disabled?: boolean;
   onChangeText?: (text: string) => void;
   showFilterButton?: boolean;
   hideFilter?: boolean;
@@ -46,6 +48,7 @@ export default function SearchBar({
         onChangeText={onChangeText}
         platform="default" // Options: 'default', 'ios', 'android'
         round
+        disabled={disabled}
         lightTheme
         containerStyle={[
           styles.searchContainer,

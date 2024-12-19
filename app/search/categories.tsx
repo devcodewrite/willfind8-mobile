@@ -20,7 +20,7 @@ const SearchLayout = () => {
     loading,
     error,
   } = useCategoryStore();
-  const { updateSelectedValue, setDefaultFilters, defaultFilters } =
+  const { updateSelectedValue,setDynamicFilters, setDefaultFilters, defaultFilters } =
     useFilterStore();
 
   const [searchValue, setSearchValue] = useState<string>("");
@@ -65,13 +65,9 @@ const SearchLayout = () => {
         }}
       />
       <SearchBar
-        placeholder="Search category ?"
+        placeholder="Search a category"
         search={searchValue}
         onChangeText={setSearchValue}
-        onFilterPress={undefined}
-        onPress={undefined}
-        inputStyle={undefined}
-        style={undefined}
       />
       {/* Display Search Results */}
       <CategoryList
@@ -83,6 +79,7 @@ const SearchLayout = () => {
         }}
         onPress={(item) => {
           if (parentId) {
+            setDynamicFilters([]);
             updateSelectedValue("c", item);
             router.dismiss(2);
             router.push({

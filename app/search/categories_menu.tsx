@@ -68,7 +68,7 @@ const SearchLayout = () => {
         }}
       />
       <SearchBar
-        placeholder="Search category ?"
+        placeholder="Search a category"
         search={searchValue}
         onChangeText={setSearchValue}
       />

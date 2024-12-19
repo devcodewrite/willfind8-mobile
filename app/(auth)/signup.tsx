@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Alert,
+  KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from "react-native";
 import TextInput from "@/components/inputs/TextInput";
@@ -11,7 +12,7 @@ import { Button, CheckBox, lightColors, Text } from "@rneui/themed";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { router } from "expo-router";
-import { useFetchAuth } from "@/hooks/store/useFetchAuth";
+import { useFetchAuth, User } from "@/hooks/store/useFetchAuth";
 import {
   countryCodes,
   CountryItem,
@@ -27,6 +28,7 @@ const SignupSchema = Yup.object().shape({
     .when("auth_field", {
       is: "email",
       then: (schema: any) => schema.required("Email is required"),
+      otherwise: (schema: any) => schema.notRequired(),
     }),
   phone: Yup.string()
     .matches(/^\+?[0-9]{10,15}$/, "Invalid phone number")
@@ -51,210 +53,249 @@ const SignupSchema = Yup.object().shape({
 });
 
 const SignupScreen = () => {
-  const { height } = useWindowDimensions();
   const [auth_field, setAuthField] = useState("email"); // email or phone
-  const { isLoading } = useFetchAuth();
+  const { isLoading, register, error, extra } = useFetchAuth();
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [countryCode, setCountryCode] = useState<CountryItem | undefined>(
     countryCodes.find((country) => country.code === "GH")
   );
 
-  const { handleChange, handleSubmit, values, errors, touched, setFieldValue } =
-    useFormik({
-      initialValues: {
-        name: "",
-        email: "",
-        phone: "",
-        phone_country: "233",
-        phone_hidden: false,
-        password: "",
-        password_confirmation: "",
-        accept_terms: false,
-        auth_field: "email",
-      },
-      validationSchema: SignupSchema,
-      onSubmit: (values) => {
-        console.log("Signup values:", values);
-        // Add your signup logic here
-      },
-    });
+  useEffect(() => {
+    if (error) Alert.alert("Sign Up", error);
+  }, [error]);
+
+  useEffect(() => {
+    if (extra && auth_field === "email")
+      router.push({
+        pathname: "/(auth)/completed",
+        params: extra.sendEmailVerification,
+      });
+
+    if (extra && auth_field === "phone")
+      router.push({
+        pathname: "/(auth)/verify-otp",
+        params: extra.sendOTPVerification,
+      });
+  }, [extra]);
+
+  const {
+    handleChange,
+    handleSubmit,
+    handleBlur,
+    values,
+    errors,
+    touched,
+    isValid,
+    setFieldValue,
+  } = useFormik({
+    initialValues: {
+      name: "",
+      email: undefined,
+      phone: "",
+      phone_country: "gh",
+      country_code: undefined,
+      phone_hidden: false,
+      password: "",
+      password_confirmation: "",
+      accept_terms: false,
+      auth_field: "email",
+    },
+    validationSchema: SignupSchema,
+    onSubmit: (values: User) => {
+      console.log("values", values);
+      values.email = auth_field === "email" ? values.email : null;
+      register(values);
+    },
+  });
 
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Sign Up</Text>
-        </View>
-        <View style={styles.content}>
-          {/* Toggle between email and phone */}
-          <Button
-            title={`Use ${
-              auth_field === "email" ? "Only Phone Number" : "Email"
-            }`}
-            onPress={() => {
-              const newAuthField = auth_field === "email" ? "phone" : "email";
-              setAuthField(newAuthField);
-              setFieldValue("auth_field", newAuthField); // Update form value
-            }}
-            titleStyle={{ color: lightColors.grey2 }}
-            type="clear"
-            icon={{ name: "swap-horiz", color: lightColors.grey2 }}
-            iconRight
-            containerStyle={styles.switchButton}
-          />
+      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={100}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Sign Up</Text>
+          </View>
 
-          {/* Name input field */}
-          <TextInput
-            label="Name"
-            placeholder="Enter your name"
-            value={values.name}
-            onChangeText={handleChange("name")}
-            errorMessage={(touched.name && errors.name) || ""}
-          />
+          <View style={styles.content}>
+            {/* Toggle between email and phone */}
+            {false && (
+              <Button
+                title={`Use ${
+                  auth_field === "email" ? "Only Phone Number" : "Email"
+                }`}
+                onPress={() => {
+                  const newAuthField =
+                    auth_field === "email" ? "phone" : "email";
+                  setAuthField(newAuthField);
+                  setFieldValue("auth_field", newAuthField); // Update form value
+                }}
+                titleStyle={{ color: lightColors.grey2 }}
+                type="clear"
+                icon={{ name: "swap-horiz", color: lightColors.grey2 }}
+                iconRight
+                containerStyle={styles.switchButton}
+              />
+            )}
 
-          {/* Email input field */}
-          {auth_field === "email" && (
+            {/* Name input field */}
             <TextInput
-              label="Email"
-              inputMode="email"
-              placeholder="Enter your email"
-              value={values.email}
-              onChangeText={handleChange("email")}
-              errorMessage={(touched.email && errors.email) || ""}
+              label="Name"
+              placeholder="Enter your name"
+              value={values.name}
+              onChangeText={handleChange("name")}
+              onBlur={handleBlur('name')}
+              errorMessage={(touched.name && errors.name) || ""}
             />
-          )}
 
-          {/* Phone input field */}
-          <TextInput
-            left={
-              <TouchableOpacity
-                style={styles.countryCodeBtn}
-                onPress={() => setShowCountryPicker(true)}
-              >
-                {countryCode ? (
-                  <Text style={styles.code}>
-                    {countryCode.flag} {countryCode.dial_code}
-                  </Text>
-                ) : null}
+            {/* Email input field */}
+            {auth_field === "email" && (
+              <TextInput
+                label="Email"
+                inputMode="email"
+                placeholder="Enter your email"
+                value={values.email}
+                onChangeText={handleChange("email")}
+                onBlur={handleBlur('email')}
+                errorMessage={(touched.email && errors.email) || ""}
+              />
+            )}
 
-                <CountryPicker
-                  show={showCountryPicker}
-                  // when picker button press you will get the country object with dial code
-                  pickerButtonOnPress={(item) => {
-                    setCountryCode(item);
-                    handleChange("phone_country")(item.code.toLowerCase());
-                    setShowCountryPicker(false);
-                  }}
-                  lang={"en"}
-                  style={{
-                    modal: {
-                      marginTop: 100,
-                    },
-                  }}
-                  onRequestClose={() => setShowCountryPicker(false)}
-                />
-              </TouchableOpacity>
-            }
-            label="Phone"
-            placeholder="Enter your phone number"
-            value={values.phone}
-            inputMode="numeric"
-            onChangeText={handleChange("phone")}
-            errorMessage={(touched.phone && errors.phone) || ""}
-          />
-
-          <CheckBox
-            title="Hide my phone number from public"
-            checked={values.phone_hidden}
-            onPress={() => setFieldValue("phone_hidden", !values.phone_hidden)}
-            containerStyle={styles.checkbox}
-          />
-
-          {/* Password input field */}
-          <TextInput
-            label="Password"
-            placeholder="Enter your password"
-            value={values.password}
-            onChangeText={handleChange("password")}
-            secureTextEntry
-            errorMessage={(touched.password && errors.password) || ""}
-          />
-
-          {/* Password confirmation field */}
-          <TextInput
-            label="Confirm Password"
-            placeholder="Confirm your password"
-            value={values.password_confirmation}
-            onChangeText={handleChange("password_confirmation")}
-            secureTextEntry
-            errorMessage={
-              (touched.password_confirmation && errors.password_confirmation) ||
-              ""
-            }
-          />
-
-          {/* Accept terms checkbox */}
-          <CheckBox
-            title={
-              <Text>
-                I accept the{" "}
-                <Text
-                  style={{ color: lightColors.primary }}
-                  onPress={() => router.push("/pages/terms")}
+            {/* Phone input field */}
+            <TextInput
+              left={
+                <TouchableOpacity
+                  style={styles.countryCodeBtn}
+                  onPress={() => setShowCountryPicker(true)}
                 >
-                  terms and conditions
+                  {countryCode ? (
+                    <Text style={styles.code}>
+                      {countryCode.flag} {countryCode.dial_code}
+                    </Text>
+                  ) : null}
+
+                  <CountryPicker
+                    show={showCountryPicker}
+                    // when picker button press you will get the country object with dial code
+                    pickerButtonOnPress={(item) => {
+                      setCountryCode(item);
+                      handleChange("phone_country")(item.code);
+                      setShowCountryPicker(false);
+                    }}
+                    lang={"en"}
+                    style={{
+                      modal: {
+                        marginTop: 100,
+                      },
+                    }}
+                    onRequestClose={() => setShowCountryPicker(false)}
+                  />
+                </TouchableOpacity>
+              }
+              label="Phone"
+              placeholder="Enter your phone number"
+              value={values.phone}
+              inputMode="numeric"
+              onChangeText={handleChange("phone")}
+              errorMessage={(touched.phone && errors.phone) || ""}
+            />
+
+            <CheckBox
+              title="Hide my phone number from public"
+              checked={values.phone_hidden}
+              onPress={() =>
+                setFieldValue("phone_hidden", !values.phone_hidden)
+              }
+              containerStyle={styles.checkbox}
+            />
+            {/* Password input field */}
+            <TextInput
+              label="Password"
+              placeholder="Enter your password"
+              value={values.password}
+              onChangeText={handleChange("password")}
+              onBlur={handleBlur('password')}
+              secureTextEntry
+              errorMessage={(touched.password && errors.password) || ""}
+            />
+
+            {/* Password confirmation field */}
+            <TextInput
+              label="Confirm Password"
+              placeholder="Confirm your password"
+              value={values.password_confirmation}
+              onChangeText={handleChange("password_confirmation")}
+              onBlur={handleBlur('password_confirmation')}
+              secureTextEntry
+              errorMessage={
+                (touched.password_confirmation &&
+                  errors.password_confirmation) ||
+                ""
+              }
+            />
+            {/* Accept terms checkbox */}
+            <CheckBox
+              title={
+                <Text style={{}}>
+                  I accept the{" "}
+                  <Text
+                    style={{ color: lightColors.primary }}
+                    onPress={() => router.push("/pages/terms")}
+                  >
+                    terms and conditions
+                  </Text>
                 </Text>
+              }
+              checked={values.accept_terms}
+              onPress={() =>
+                setFieldValue("accept_terms", !values.accept_terms)
+              }
+              containerStyle={styles.checkbox}
+            />
+            {touched.accept_terms && errors.accept_terms && (
+              <Text style={styles.errorText}>{errors.accept_terms}</Text>
+            )}
+          </View>
+          <View style={styles.footer}>
+            {/* Submit Button */}
+            <Button
+              radius={10}
+              buttonStyle={styles.button}
+              title={isLoading ? "Signing Up..." : "Sign Up"}
+              onPress={() => handleSubmit()}
+              loading={isLoading}
+              disabled={isLoading || !isValid}
+            />
+
+            <Text style={styles.textCenter}>
+              Already have an account?{" "}
+              <Text
+                style={{ color: lightColors.primary }}
+                onPress={() => router.push("../login")}
+              >
+                Login
               </Text>
-            }
-            checked={values.accept_terms}
-            onPress={() => setFieldValue("accept_terms", !values.accept_terms)}
-            containerStyle={styles.checkbox}
-          />
-          {touched.accept_terms && errors.accept_terms && (
-            <Text style={styles.errorText}>{errors.accept_terms}</Text>
-          )}
-        </View>
-
-        <View style={styles.footer}>
-          {/* Submit Button */}
-          <Button
-            radius={10}
-            buttonStyle={styles.button}
-            title={isLoading ? "Signing Up..." : "Sign Up"}
-            onPress={() => handleSubmit()}
-            loading={isLoading}
-            disabled={isLoading}
-          />
-
-          <Text style={styles.textCenter}>
-            Already have an account?{" "}
-            <Text
-              style={{ color: lightColors.primary }}
-              onPress={() => router.push("../login")}
-            >
-              Login
             </Text>
-          </Text>
 
-          <Text style={styles.textCenter}>
-            By continuing you agree to the{" "}
-            <Text
-              style={{ color: lightColors.primary }}
-              onPress={() => router.push("/pages/terms")}
-            >
-              Policy and Rules
+            <Text style={styles.textCenter}>
+              By continuing you agree to the{" "}
+              <Text
+                style={{ color: lightColors.primary }}
+                onPress={() => router.push("/pages/terms")}
+              >
+                Policy and Rules
+              </Text>
             </Text>
-          </Text>
 
-          <Button
-            onPress={() => router.replace("../(tabs)")}
-            type="outline"
-            radius={10}
-            icon={{ name: "home", color: lightColors.primary }}
-            title={"Go Home"}
-          />
+            <Button
+              onPress={() => router.replace("../(tabs)")}
+              type="outline"
+              radius={10}
+              icon={{ name: "home", color: lightColors.primary }}
+              title={"Go Home"}
+            />
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </ScrollView>
   );
 };

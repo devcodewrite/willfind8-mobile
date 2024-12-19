@@ -1,60 +1,84 @@
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import {
   View,
   StyleSheet,
-  Alert,
   TouchableOpacity,
   GestureResponderEvent,
   ViewStyle,
   DimensionValue,
+  Linking,
 } from "react-native";
-import { Card, Text, Icon, ButtonGroup, lightColors } from "@rneui/themed";
+import {
+  Card,
+  Text,
+  Icon,
+  ButtonGroup,
+  lightColors,
+  ListItem,
+} from "@rneui/themed";
 import { Image } from "expo-image";
 import { CountLabel } from "./CountLabel";
 import SavedButton from "./SavedButton";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useAuthModal } from "@/lib/auth/AuthModelProvider";
+import { router } from "expo-router";
+import { Post } from "@/hooks/store/useFetchPosts";
+import DeleteButton from "./DeleteButton";
 
 const PostCardLandscape = ({
-  title,
-  count_pictures,
-  price_formatted,
-  city,
-  picture,
+  post,
   size = "100%",
   onPress,
   style,
+  toggleSaved,
+  deleteSaved,
+  showMenu,
+  hideSave,
+  onDelete,
 }: {
-  picture: {
-    filename: string;
-    url: {
-      full: string;
-      small: string;
-      medium: string;
-      big: string;
-    };
-  };
-  count_pictures: number;
-  title: string;
-  price_formatted: string;
-  city: {
-    id: number;
-    name: string;
-    latitude: string;
-    longitude: string;
-  };
+  post: Post;
   size: DimensionValue;
-  onPress: (event: GestureResponderEvent) => void;
-  style: ViewStyle;
+  onPress: (event?: GestureResponderEvent) => void;
+  toggleSaved?: (id: number) => void;
+  deleteSaved?: (id: number) => void;
+  hideSave?: boolean;
+  onDelete?: (id: number) => void;
+  style?: ViewStyle;
+  showMenu?: boolean;
 }): React.JSX.Element => {
   const placeholder = require("@/assets/images/Loading_icon.gif");
+  const { isAuthenticated, user } = useAuth();
+  const { showLoginModal } = useAuthModal();
+  const [menuVisible, setMenuVisible] = useState(false);
 
-  const handleButtons = (index: number) => {
+  const handleButtons = async (index: number) => {
+    if (!isAuthenticated) return showLoginModal();
     if (index === 0) {
-      Alert.alert("Pressed 0");
+      await Linking.openURL(`tel:${post.phone}`);
+    } else if (index === 1) {
+      router.push({ pathname: "/ads/chat", params: { postId: post.id } });
     }
   };
 
+  const handleEdit = () => {
+    router.push({ pathname: "/ads/update", params: { id: post.id } });
+    setMenuVisible(false);
+  };
+
+  const handleDelete = () => {
+    if (onDelete) onDelete(post.id);
+    setMenuVisible(false);
+  };
+
   return (
-    <TouchableOpacity activeOpacity={0.75} style={style} onPress={onPress}>
+    <TouchableOpacity
+      activeOpacity={0.75}
+      style={style}
+      onPress={(e) => {
+        if (showMenu) setMenuVisible(false);
+        else if (onPress) onPress(e);
+      }}
+    >
       <Card
         wrapperStyle={{ flexDirection: "row" }}
         containerStyle={[styles.card, { width: size }]}
@@ -63,26 +87,87 @@ const PostCardLandscape = ({
         <Image
           style={[styles.image, { width: "40%" }]}
           contentFit="cover"
-          source={picture.url.medium}
+          source={post.picture.url.medium}
           cachePolicy={"memory"}
           placeholder={placeholder}
           placeholderContentFit="contain"
         />
         {/* Count Label */}
         <CountLabel
-          total={count_pictures}
+          total={post.count_pictures}
           style={styles.countLabel}
           variant={"dark"}
         />
         <View style={{ flex: 1 }}>
           {/* Post Details */}
           <View style={styles.infoContainer}>
-            <Text numberOfLines={2} style={styles.title}>
-              {title}
-            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 8,
+                justifyContent: "space-between",
+              }}
+            >
+              <Text numberOfLines={2} style={styles.title}>
+                {post.title}
+              </Text>
+              {showMenu && (
+                <Icon
+                  name="more-horiz"
+                  size={28}
+                  onPress={() => setMenuVisible(!menuVisible)}
+                />
+              )}
+              {menuVisible && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 14,
+                    end: 20,
+                    zIndex: 100,
+                    width: 200,
+                  }}
+                >
+                  <Card
+                    containerStyle={{
+                      width: 200,
+                      padding: 0,
+                      borderRadius: 15,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <ListItem
+                      containerStyle={{ paddingVertical: 10 }}
+                      onPress={handleDelete}
+                    >
+                      <ListItem.Content>
+                        <ListItem.Title>Delete</ListItem.Title>
+                      </ListItem.Content>
+                      <ListItem.Chevron name="trash" />
+                    </ListItem>
+                  </Card>
+                </View>
+              )}
+            </View>
             <View style={styles.priceSection}>
-              <Text style={styles.price_formatted}>{price_formatted}</Text>
-              <SavedButton onPress={() => Alert.alert("Added")} />
+              <Text style={styles.price_formatted}>{post.price_formatted}</Text>
+
+              {hideSave ? (
+                <DeleteButton
+                  onPress={() => deleteSaved && deleteSaved(post.id)}
+                />
+              ) : (
+                <SavedButton
+                  active={
+                    !!user &&
+                    post.savedByLoggedUser &&
+                    !!post.savedByLoggedUser.find(
+                      (save) => save.user_id == user.id
+                    )
+                  }
+                  onPress={() => toggleSaved && toggleSaved(post.id)}
+                />
+              )}
             </View>
             <View style={styles.locationContainer}>
               <Icon
@@ -91,7 +176,7 @@ const PostCardLandscape = ({
                 color="#888"
                 size={12}
               />
-              <Text style={styles.location}>{city?.name}</Text>
+              <Text style={styles.location}>{post.city?.name}</Text>
             </View>
           </View>
           <ButtonGroup
@@ -118,16 +203,17 @@ const PostCardLandscape = ({
   );
 };
 
-const arePropsEqual = (prevProps:any, nextProps:any) => {
+const arePropsEqual = (prevProps: any, nextProps: any) => {
   // Perform a shallow comparison on props for memoization
   return (
-    prevProps.title === nextProps.title &&
-    prevProps.count_pictures === nextProps.count_pictures &&
-    prevProps.price_formatted === nextProps.price_formatted &&
-    prevProps.city.id === nextProps.city.id &&
-    prevProps.picture.url.medium === nextProps.picture.url.medium &&
-    prevProps.size === nextProps.size &&
-    prevProps.style === nextProps.style
+    prevProps.post.title === nextProps.post.title &&
+    prevProps.post.count_pictures === nextProps.post.count_pictures &&
+    prevProps.post.price_formatted === nextProps.post.price_formatted &&
+    prevProps.post.city?.id === nextProps.post.city?.id &&
+    prevProps.post.picture?.url?.medium ===
+      nextProps.post.picture?.url?.medium &&
+    prevProps.post.savedByLoggedUser?.length ===
+      nextProps.post.savedByLoggedUser?.length
   );
 };
 

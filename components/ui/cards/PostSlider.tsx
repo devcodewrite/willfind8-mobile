@@ -1,7 +1,10 @@
-import { StyleSheet, View } from "react-native";
+import { Linking, StyleSheet, View } from "react-native";
 import ImageSlider from "../ImageSlider";
 import { Button, Icon, lightColors, Text } from "@rneui/themed";
 import { useState } from "react";
+import { router } from "expo-router";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useAuthModal } from "@/lib/auth/AuthModelProvider";
 
 interface Picture {
   id: number;
@@ -51,6 +54,7 @@ interface Post {
 }
 
 export default function PostSlider({
+  id,
   title,
   price_formatted,
   created_at_formatted,
@@ -62,7 +66,19 @@ export default function PostSlider({
   onImagePress,
 }: Post & { onImagePress: (index: number) => void }) {
   const [viewPhone, setViewPhone] = useState(false);
-  const handleCall = () => {};
+  const { user } = useAuth();
+  const { showLoginModal } = useAuthModal();
+
+  const handleCall = async () => {
+    if (!user) return showLoginModal();
+
+    await Linking.openURL(`tel:${phone}`);
+  };
+  const handleChat = () => {
+    if (!user) return showLoginModal();
+    router.push({ pathname: "/ads/chat", params: { postId: id } });
+  };
+
   return (
     <View style={styles.container}>
       <ImageSlider
@@ -94,6 +110,7 @@ export default function PostSlider({
             title={"Make an Offer"}
             titleStyle={{ fontWeight: "600" }}
             containerStyle={{ width: "50%" }}
+            onPress={handleChat}
           />
           <Button
             onPress={viewPhone ? () => handleCall() : () => setViewPhone(true)}

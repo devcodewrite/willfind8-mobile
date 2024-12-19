@@ -17,10 +17,10 @@ interface User {
   language_code: string;
   user_type_id: number | null;
   gender_id: number;
-  photo?: string | null;
+  photo?: any;
   about?: string | null;
   auth_field: "email" | "phone" | "string";
-  email: string;
+  email?: string;
   phone: string;
   phone_national: string;
   phone_country: string;
@@ -44,7 +44,7 @@ interface User {
   original_updated_at: string | null;
   original_last_activity: string | null;
   created_at_formatted: string | null;
-  photo_url: string | null;
+  photo_url?: string | null;
   p_is_online?: boolean;
   country_flag_url?: string | null;
 }
@@ -53,6 +53,11 @@ interface Extra {
   authToken: string;
   tokenType: "Bearer" | string;
   isAdmin: boolean;
+  sendEmailVerification: {
+    emailVerificationSent: boolean;
+    message: string;
+    success: boolean;
+  };
 }
 
 interface ForgotPasswordData {
@@ -77,6 +82,7 @@ interface ResetPasswordData {
 export const useFetchAuth = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [response, setResponse] = useState<User | boolean | null>(null);
   const [extra, setExtra] = useState<Extra | null>(null);
 
@@ -105,8 +111,32 @@ export const useFetchAuth = () => {
     try {
       setIsLoading(true);
       setError(null);
-
       const { data: responseData } = await api.post("/api/users", data); // Use api instance
+      const { success, message, result, extra } = responseData;
+
+      if (!success) {
+        setError(message); // If the request failed, set the error message
+      } else {
+        setExtra(extra);
+        // setResponse(result); // Set the response if success
+      }
+    } catch (err: any) {
+      console.log("err", err);
+      setError(err.response?.data?.message || err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const update = async (userId: number, data: User) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const { data: responseData } = await api.put(
+        `/api/users/${userId}`,
+        data
+      ); // Use api instance
       const { success, message, result, extra } = responseData;
 
       if (!success) {
@@ -115,6 +145,52 @@ export const useFetchAuth = () => {
         setResponse(result); // Set the response if success
       }
     } catch (err: any) {
+      console.log("err", err);
+      setError(err.response?.data?.message || err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const closeAccount = async (userId: number) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const { data: responseData } = await api.delete(`/api/users/${userId}`); // Use api instance
+      const { success, message, result } = responseData;
+
+      if (!success) {
+        setError(message); // If the request failed, set the error message
+      } else {
+        setResponse(result); // Set the response if success
+      }
+    } catch (err: any) {
+      console.log("err", err);
+      setError(err.response?.data?.message || err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const uploadPhoto = async (userId: number, data: any) => {
+    try {
+      setIsLoading(true);
+      setUploadError(null);
+
+      const { data: responseData } = await api.put(
+        `/api/users/${userId}`,
+        data
+      ); // Use api instance
+      const { success, message, result, extra } = responseData;
+
+      if (!success) {
+        setUploadError(message); // If the request failed, set the error message
+      } else {
+        setResponse(result); // Set the response if success
+      }
+    } catch (err: any) {
+      console.log("err", err.response);
       setError(err.response?.data?.message || err.message);
     } finally {
       setIsLoading(false);
@@ -262,9 +338,14 @@ export const useFetchAuth = () => {
   return {
     isLoading,
     error,
+    uploadError,
     response,
     extra,
     login,
+    register,
+    update,
+    closeAccount,
+    uploadPhoto,
     forgotPassword,
     resetPasswordToken,
     resetPassword,
@@ -274,4 +355,4 @@ export const useFetchAuth = () => {
   };
 };
 
-export { ForgotPasswordData, LoginData };
+export { ForgotPasswordData, User, LoginData };

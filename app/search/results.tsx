@@ -18,6 +18,8 @@ import { router } from "expo-router";
 import SearchBar from "@/components/inputs/SearchBar";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useFilterStore } from "@/hooks/store/filterStore";
+import { useAuthModal } from "@/lib/auth/AuthModelProvider";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 interface FilterType {
   c?: number | string;
@@ -59,13 +61,17 @@ const SearchLayout = () => {
     items,
     loadingStates,
     error,
+    pagination,
     fetchSearchResults,
     resetSearchResults,
+    addToSavedPost,
   } = usePostStore();
   const { defaultFilters, dynamicFilters, setDefaultFilters } =
     useFilterStore();
 
   const [searchValue, setSearchValue] = useState<string>(query?.toString());
+  const { user } = useAuth();
+  const { showLoginModal } = useAuthModal();
 
   const category: DefaultFilter = defaultFilters.find(
     (filter: DefaultFilter) => filter.id === "c"
@@ -84,28 +90,26 @@ const SearchLayout = () => {
     if (defaultFilters.length === 0) setDefaultFilters();
     resetSearchResults();
     fetchSearchResults({
+      page: 1,
       perPage: 10,
       distance: 50,
       ...filter,
       q: searchValue,
     }).finally(() => setRefreshing(false));
-  }, [filter, route, searchValue]);
+  }, [filter, searchValue]);
 
   useEffect(() => {
-    const cf = dynamicFilters.reduce<Map<number, number | string>>(
-      (map, filter) => {
-        if (
-          typeof filter.selectedValue === "number" ||
-          typeof filter.selectedValue === "string"
-        ) {
-          map.set(filter.id, filter.selectedValue);
-        } else if (filter.selectedValue) {
-          map.set(filter.id, filter.selectedValue.join(","));
-        }
-        return map;
-      },
-      new Map()
-    );
+    const cf = dynamicFilters.reduce<any>((cf, filter) => {
+      if (
+        (filter.id && typeof filter.selectedValue === "number") ||
+        typeof filter.selectedValue === "string"
+      ) {
+        cf[filter.id] = filter.selectedValue;
+      } else if (filter.selectedValue) {
+        cf[filter.id] = filter.selectedValue.join(",");
+      }
+      return cf;
+    }, {});
     setFilter({
       ...filter,
       cf,
@@ -117,15 +121,22 @@ const SearchLayout = () => {
   }, [category, priceRange, city, dynamicFilters]);
 
   const loadMore = () => {
-    fetchSearchResults({
-      perPage: 10,
-      distance: 50,
-      ...filter,
-    }).finally(() => setRefreshing(false));
+    if (pagination.search.hasMore)
+      fetchSearchResults({
+        perPage: 10,
+        distance: 50,
+        ...filter,
+      }).finally(() => setRefreshing(false));
   };
 
   const handlePostClick = (item: any) =>
     router.push({ pathname: "../ads/details", params: item });
+
+  const handleToggleSaved = (postId: number, user: any) => {
+    if (!user) return showLoginModal();
+
+    addToSavedPost(postId, user);
+  };
 
   return (
     <View
@@ -271,6 +282,10 @@ const SearchLayout = () => {
             price_formatted={item.price_formatted}
             count_pictures={item.count_pictures}
             onPress={(e: any) => handlePostClick(item)}
+            user_id={item.user_id}
+            id={item.id}
+            savedByLoggedUser={item.savedByLoggedUser}
+            toggleSaved={(id) => handleToggleSaved(id, user)}
           />
         )}
         numColumns={2}

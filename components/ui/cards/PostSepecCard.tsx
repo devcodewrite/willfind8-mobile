@@ -64,14 +64,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "white",
-    padding: 10,
+    padding: 15,
     gap: 10,
   },
-  title: { fontSize: 12 },
+  title: { fontSize: 14 },
   subtitle: {
     flex: 1,
-    fontSize: 12,
-    color: "#04A4A4",
+    fontSize: 14,
+    color: lightColors.grey3,
     textTransform: "uppercase",
   },
   showMoreButton: {

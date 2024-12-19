@@ -1,46 +1,96 @@
-import React from "react";
-import { View, StyleSheet, FlatList, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Keyboard,
+} from "react-native";
 import { FontAwesome } from "@expo/vector-icons"; // Icons for like button
 import { lightColors } from "@rneui/base";
 import { Text } from "@rneui/themed";
-import ChatCard from "@/components/ui/cards/ChatCard";
+import ChatCard, { Message } from "@/components/ui/cards/ChatCard";
+import TextInput from "@/components/inputs/TextInput";
+import { Thread } from "@/hooks/store/useFetchThreads";
 
 const FeedbackChat = ({
   data,
+  thread,
   onViewAll,
 }: {
   onViewAll?: (e?: any) => void;
-  data: Array<any>;
+  data: Array<Message>;
+  thread?: Thread;
 }) => {
+  const [message, setMessage] = useState("");
+  const sendMessage = () => {
+    if (thread) {
+      // add message to thread
+    } else {
+      // start an new thread
+    }
+  };
   const renderMessage = ({ item }: { item: any }) => <ChatCard item={item} />;
+
   return (
-    data.length > 0 && (
+    <View style={styles.container}>
       <FlatList
-        style={{ backgroundColor: lightColors.white, paddingVertical: 10 }}
+        style={styles.listContainer}
+        inverted
         ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.headerText}>{data.length} Feedbacks</Text>
-            <TouchableOpacity onPress={onViewAll} style={styles.viewAllButton}>
-              <Text style={styles.viewAllText}>View all</Text>
-              <FontAwesome
-                name="chevron-right"
-                size={14}
-                color={lightColors.primary}
-              />
-            </TouchableOpacity>
-          </View>
+          null && (
+            <View style={styles.header}>
+              <Text style={styles.headerText}>{data.length} Feedbacks</Text>
+
+              <TouchableOpacity
+                onPress={onViewAll}
+                style={styles.viewAllButton}
+              >
+                <Text style={styles.viewAllText}>View all</Text>
+                <FontAwesome
+                  name="chevron-right"
+                  size={14}
+                  color={lightColors.primary}
+                />
+              </TouchableOpacity>
+            </View>
+          )
         }
         data={data}
         renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
       />
-    )
+
+      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={70}>
+        <TextInput
+          placeholder="Write your message here"
+          value={message}
+          onChangeText={setMessage}
+          style={{ height: "auto", minHeight: 50 }}
+          multiline
+          containerStyle={{ height: "auto" }}
+          inputContainer={{ height: "auto", maxHeight: 100 }}
+          rightIcon={{
+            name: "send",
+            size: 34,
+            color: lightColors.primary,
+            onPress: sendMessage,
+          }}
+        />
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  listContainer: {},
+  container: {
+    flex: 1,
+  },
+  listContainer: {
+    paddingVertical: 10,
+  },
   messageContainer: {
     marginBottom: 20,
     paddingHorizontal: 10,

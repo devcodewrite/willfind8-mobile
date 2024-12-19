@@ -15,23 +15,32 @@ import TextInput from "@/components/inputs/TextInput";
 import { useFetchAuth } from "@/hooks/store/useFetchAuth";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import LoadingBar from "@/components/ui/cards/LoadingBar";
+import {
+  countryCodes,
+  CountryItem,
+  CountryPicker,
+} from "react-native-country-codes-picker";
 import { TouchableWithoutFeedback } from "react-native";
+import { router } from "expo-router";
 
 // Validation schema using Yup
 const UserSchema = Yup.object().shape({
-  password: Yup.string()
-    .min(6, "Password must be at least 6 characters")
-    .required("Password is required")
+  phone: Yup.string().nonNullable().required("Phone number is required"),
 });
 
 const UserScreen = () => {
-  const { isLoading, closeAccount, response, error } = useFetchAuth();
-  const { user, logout } = useAuth();
+  const { isLoading, update, response, error } = useFetchAuth();
+  const { user, updateUser } = useAuth();
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [countryCode, setCountryCode] = useState<CountryItem | undefined>(
+    countryCodes.find((country: any) => country.code === "GH")
+  );
 
   const {
     handleChange,
     handleSubmit,
     handleBlur,
+    setFieldValue,
     isValid,
     values,
     errors,
@@ -39,11 +48,14 @@ const UserScreen = () => {
     validateForm,
   } = useFormik({
     initialValues: {
-      password: "",
+      phone: "",
+      phone_country: "gh",
+      country_code: undefined,
+      phone_hidden: false,
     },
     validationSchema: UserSchema,
     onSubmit: (values: any) => {
-      if (user) closeAccount(user.id);
+      if (user) update(user.id, { ...user, ...values });
     },
   });
 
@@ -53,39 +65,69 @@ const UserScreen = () => {
 
   useEffect(() => {
     if (error) Alert.alert("Update Failed!", error);
-    if (response) logout();
+    else if (response && typeof response !== "boolean") {
+      updateUser(response);
+    }
+    if (response) {
+      Alert.alert("Phone Number Updated", "Phone number updated successfully.");
+    }
   }, [response, error]);
 
   return (
     <View style={styles.container}>
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
         <View style={styles.content}>
-          <Text
-            style={{
-              color: lightColors.error,
-              textAlign: "center",
-            }}
-          >
-            This action will remove your account completely form our system and you will
-            not be able recover any of your related data including your ads.
-          </Text>
-          {/* Password input field */}
+          {/* Phone input field */}
           <TextInput
-            label="Password"
-            placeholder="Enter your password"
-            value={values.password}
-            onChangeText={handleChange("password")}
-            onBlur={handleBlur("password")}
-            secureTextEntry
-            errorMessage={
-              (touched.password && errors.password?.toString()) || ""
+            left={
+              <TouchableOpacity
+                style={styles.countryCodeBtn}
+                onPress={() => setShowCountryPicker(true)}
+              >
+                {countryCode ? (
+                  <Text style={styles.code}>
+                    {countryCode.flag} {countryCode.dial_code}
+                  </Text>
+                ) : null}
+
+                <CountryPicker
+                  show={showCountryPicker}
+                  // when picker button press you will get the country object with dial code
+                  pickerButtonOnPress={(item) => {
+                    setCountryCode(item);
+                    handleChange("phone_country")(item.code);
+                    setShowCountryPicker(false);
+                  }}
+                  lang={"en"}
+                  style={{
+                    modal: {
+                      marginTop: 100,
+                    },
+                  }}
+                  onRequestClose={() => setShowCountryPicker(false)}
+                />
+              </TouchableOpacity>
             }
+            label="Phone"
+            placeholder="Enter your phone number"
+            value={values.phone}
+            inputMode="numeric"
+            onChangeText={handleChange("phone")}
+            onBlur={handleBlur("phone")}
+            errorMessage={(touched.phone && errors.phone?.toString()) || ""}
           />
+          <CheckBox
+            title="Hide my phone number from public"
+            checked={values.phone_hidden}
+            onPress={() => setFieldValue("phone_hidden", !values.phone_hidden)}
+            containerStyle={styles.checkbox}
+          />
+
           <Button
             size="lg"
             buttonStyle={styles.button}
             color={"primary"}
-            title="Delete Account"
+            title="Submit"
             icon={
               isLoading ? (
                 <ActivityIndicator color="white" animating />

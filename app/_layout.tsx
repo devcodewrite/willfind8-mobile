@@ -44,26 +44,44 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <AuthProvider>
-        <AuthModalProvider>
+      <AuthModalProvider>
+        <AuthProvider>
           <Stack>
             <Stack.Screen
               name="(tabs)"
               options={{ title: "", headerShown: false }}
             />
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="(auth)"
+              options={{ headerShown: false, title: "" }}
+            />
             <Stack.Screen
               name="ads/add"
               options={{ animation: "slide_from_bottom" }}
             />
             <Stack.Screen
-              name="ads/details"
+              name="ads/update"
               getId={({ params }) => params?.id}
+              options={{ animation: "slide_from_bottom" }}
+            />
+            <Stack.Screen
+              name="ads/details"
+              getId={({ params }) => new Date().getTime().toString()}
               options={{ headerShown: false, headerTitle: "" }}
+            />
+            <Stack.Screen
+              name="ads/seller"
+              getId={({ params }) => params?.id}
+              options={{ title: "", headerShown: true }}
             />
             <Stack.Screen
               name="ads/fullscreen"
               options={{ headerShown: false, animation: "fade" }}
+            />
+            <Stack.Screen
+              name="ads/chat"
+              getId={({ params }) => params?.id}
+              options={{ headerTitle: "" }}
             />
             <Stack.Screen
               name="search/search"
@@ -127,11 +145,23 @@ export default function RootLayout() {
               options={{ title: "SignIn & Security" }}
             />
 
+            <Stack.Screen
+              name="(user)/email"
+              options={{ title: "Change Email" }}
+            />
+            <Stack.Screen
+              name="(user)/phone"
+              options={{ title: "Change Phone Number" }}
+            />
+            <Stack.Screen
+              name="(user)/change-password"
+              options={{ title: "Change Password" }}
+            />
             <Stack.Screen name="pages/terms" />
             <Stack.Screen name="+not-found" />
           </Stack>
-        </AuthModalProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </AuthModalProvider>
       <StatusBar style="auto" />
     </ThemeProvider>
   );

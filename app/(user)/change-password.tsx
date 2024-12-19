@@ -15,23 +15,36 @@ import TextInput from "@/components/inputs/TextInput";
 import { useFetchAuth } from "@/hooks/store/useFetchAuth";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import LoadingBar from "@/components/ui/cards/LoadingBar";
+import {
+  countryCodes,
+  CountryItem,
+  CountryPicker,
+} from "react-native-country-codes-picker";
 import { TouchableWithoutFeedback } from "react-native";
 
 // Validation schema using Yup
 const UserSchema = Yup.object().shape({
   password: Yup.string()
     .min(6, "Password must be at least 6 characters")
-    .required("Password is required")
+    .required("Password is required"),
+  password_confirmation: Yup.string()
+    .oneOf([Yup.ref("password"), ""], "Passwords must match")
+    .required("Password confirmation is required"),
 });
 
 const UserScreen = () => {
-  const { isLoading, closeAccount, response, error } = useFetchAuth();
-  const { user, logout } = useAuth();
+  const { isLoading, update, response, error } = useFetchAuth();
+  const { user, updateUser } = useAuth();
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [countryCode, setCountryCode] = useState<CountryItem | undefined>(
+    countryCodes.find((country: any) => country.code === "GH")
+  );
 
   const {
     handleChange,
     handleSubmit,
     handleBlur,
+    setFieldValue,
     isValid,
     values,
     errors,
@@ -40,10 +53,11 @@ const UserScreen = () => {
   } = useFormik({
     initialValues: {
       password: "",
+      password_confirmation: "",
     },
     validationSchema: UserSchema,
     onSubmit: (values: any) => {
-      if (user) closeAccount(user.id);
+      if (user) update(user.id, { ...user, ...values });
     },
   });
 
@@ -53,39 +67,47 @@ const UserScreen = () => {
 
   useEffect(() => {
     if (error) Alert.alert("Update Failed!", error);
-    if (response) logout();
+    else if (response && typeof response !== "boolean") {
+      updateUser(response);
+    }
+    if (response)
+      Alert.alert("Phone Number Updated", "Phone number updated successfully.");
   }, [response, error]);
 
   return (
     <View style={styles.container}>
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
         <View style={styles.content}>
-          <Text
-            style={{
-              color: lightColors.error,
-              textAlign: "center",
-            }}
-          >
-            This action will remove your account completely form our system and you will
-            not be able recover any of your related data including your ads.
-          </Text>
           {/* Password input field */}
           <TextInput
             label="Password"
             placeholder="Enter your password"
             value={values.password}
             onChangeText={handleChange("password")}
-            onBlur={handleBlur("password")}
             secureTextEntry
             errorMessage={
               (touched.password && errors.password?.toString()) || ""
+            }
+          />
+
+          {/* Password confirmation field */}
+          <TextInput
+            label="Confirm Password"
+            placeholder="Confirm your password"
+            value={values.password_confirmation}
+            onChangeText={handleChange("password_confirmation")}
+            secureTextEntry
+            errorMessage={
+              (touched.password_confirmation &&
+                errors.password_confirmation?.toString()) ||
+              ""
             }
           />
           <Button
             size="lg"
             buttonStyle={styles.button}
             color={"primary"}
-            title="Delete Account"
+            title="Submit"
             icon={
               isLoading ? (
                 <ActivityIndicator color="white" animating />

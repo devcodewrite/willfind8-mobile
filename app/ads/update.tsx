@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -24,16 +24,12 @@ import LoadingBar from "@/components/ui/cards/LoadingBar";
 import { useFilterStore } from "@/hooks/store/filterStore";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import usePostStore from "@/hooks/store/useFetchPosts";
-import { useFocusEffect } from "expo-router";
+import { useRouteInfo } from "expo-router/build/hooks";
 
-export default function AddScreen() {
-  const { refreshUserData, user } = useAuth();
-
-  useFocusEffect(
-    useCallback(() => {
-      refreshUserData();
-    }, [refreshUserData])
-  );
+export default function AdsScreen() {
+  const route = useRouteInfo();
+  const { id } = route.params;
+  const postId = parseInt(id?.toString());
 
   const {
     dynamicFilters,
@@ -41,11 +37,14 @@ export default function AddScreen() {
     fetchFilters,
     defaultFilters,
     setDefaultFilters,
+    setDynamicFilters
   } = useFilterStore();
 
-  const { addPost, loadingStates } = usePostStore();
+  const { items, updatePost, loadingStates } = usePostStore();
+  const post = items[postId];
 
   const inputRef = useRef();
+  const { user } = useAuth();
   const category = defaultFilters.find(
     (filter) => filter.id === "c"
   )?.selectedValue;
@@ -59,7 +58,7 @@ export default function AddScreen() {
   }, [category?.id, defaultFilters.length, setDefaultFilters, fetchFilters]);
 
   useEffect(() => {
-    if (loadingStates.postAdded) router.push("/(user)/mylisting");
+    if (loadingStates.postUpdated) router.push("/(user)/mylisting");
   }, [loadingStates]);
 
   const openCategoryModal = () => router.push("/search/categories_menu");
@@ -98,22 +97,22 @@ export default function AddScreen() {
 
   const formik = useFormik({
     initialValues: {
-      title: "",
-      city_id: 0,
-      category_id: 0,
-      description: "",
-      price: "",
-      email: user?.email,
-      phone: user?.phone,
-      contact_name: user?.name || "",
+      title: post.title,
+      city_id: post.city.id,
+      category_id: post.category.id,
+      description: post.description,
+      price: post.price,
+      email: post.user?.email,
+      phone: post.user?.phone,
+      contact_name: post.user?.name || "",
       phone_country: "GH",
       auth_field: "email",
       pictures: [],
-      country_code: null,
+      country_code: post.country_code,
       negotiable: false,
       permanent: false,
-      accept_terms: false,
-      tags: [],
+      accept_terms: post.accept_terms,
+      tags: post.tags,
       cf: dynamicFilters.reduce(
         (acc, filter) => ({
           ...acc,
@@ -124,7 +123,7 @@ export default function AddScreen() {
     },
     validationSchema: buildValidationSchema(),
     onSubmit: async (values) => {
-      await addPost(values);
+      await updatePost(values);
     },
   });
 
@@ -141,12 +140,17 @@ export default function AddScreen() {
     formik.setFieldValue("city_id", city?.id || null);
   }, [city]);
 
+  useEffect(() => {
+    fetchFilters(post.category.id);
+   // setDynamicFilters(post.extra?.fieldsValues.)
+  }, [post]);
+
   return (
     <View style={{ flex: 1 }}>
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
         <Stack.Screen
           options={{
-            title: "New Advert",
+            title: "Edit  Advert",
             headerRight: () => (
               <TouchableOpacity
                 activeOpacity={0.55}
@@ -181,7 +185,7 @@ export default function AddScreen() {
           <View style={{ padding: 10, paddingBottom: 50 }}>
             <SelectDialog
               label="City"
-              value={city?.name}
+              value={city?.name || post.city.name}
               onPress={openCityModal}
               placeholder="Select a city"
               errorMessage={
@@ -192,7 +196,7 @@ export default function AddScreen() {
             />
             <SelectDialog
               label="Category"
-              value={category?.name}
+              value={category?.name || post.category.name}
               onPress={openCategoryModal}
               placeholder="Select a category"
               errorMessage={
@@ -202,6 +206,7 @@ export default function AddScreen() {
               }
             />
             <ImagePickerInput
+              imagePlaceHolder={post.pictures?.map((pic) => pic.url.full)}
               onImagesSelected={(imgs: any) => {
                 formik.setFieldValue("pictures", imgs, true);
               }}
@@ -221,7 +226,7 @@ export default function AddScreen() {
               <TouchableWithoutFeedback>
                 <DescriptionInput
                   inputRef={inputRef}
-                  value={""}
+                  value={formik.values.description}
                   onChange={(value: any) =>
                     formik.setFieldValue("description", value)
                   }

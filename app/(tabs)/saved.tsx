@@ -1,24 +1,76 @@
-import SearchBar from "@/components/inputs/SearchBar";
+import { EmptyListingCard } from "@/components/ui/cards/EmptyListingCard";
+import LoadingBar from "@/components/ui/cards/LoadingBar";
+import PostCardLandscape from "@/components/ui/cards/PostCardLandscape";
+import usePostStore, { Post } from "@/hooks/store/useFetchPosts";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import { Ionicons } from "@expo/vector-icons";
-import { Button, lightColors, Text } from "@rneui/themed";
-import { ListItem, Icon } from "@rneui/themed";
-import { router, Tabs } from "expo-router";
-import { setStatusBarStyle } from "expo-status-bar";
-import { useEffect, useState } from "react";
-import { TouchableOpacity } from "react-native";
+import { Button, Text } from "@rneui/themed";
+import { router, Tabs, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  TouchableOpacity,
+  useWindowDimensions,
+} from "react-native";
 import { FlatList, StyleSheet, View } from "react-native";
 
 export default function SavedScreen() {
-  const [searchResults, setSearchResults] = useState(null);
-  const [search, setSearch] = useState("");
+  const { width } = useWindowDimensions();
+  const { refreshUserData, user } = useAuth();
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshUserData();
+    }, [refreshUserData])
+  );
+
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const {
+    loadingStates,
+    error: postError,
+    items,
+    pagination,
+    savedPostIds,
+    fetchSavedPosts,
+    resetSavedPosts,
+    addToSavedPost,
+  } = usePostStore((state) => state);
+  const savedPosts = savedPostIds.map((id) => items[id]);
+  const [searchResults, setSearchResults] = useState<Array<Post>>();
+
+  useEffect(() => {
+    setSearchResults(savedPosts);
+  }, [items]);
+
+  const loadMorePost = () => {
+    if (!loadingStates.fetchSaved && pagination.saved.hasMore)
+      fetchSavedPosts({ sort: "created_at", perPage: 10 });
+  };
+
+  const removeSaved = (postId: number) => {
+    if (user && !loadingStates.savePost)
+      addToSavedPost(postId, user).finally(() => {
+        resetSavedPosts();
+        fetchSavedPosts({ page: 1, sort: "created_at", perPage: 10 });
+      });
+  };
+
   // Function to handle search
-  const handleSearch = (query: string) => {
+  const handleSearch = (e: any) => {
+    const query = e.nativeEvent.text;
     if (query) {
+      setSearchResults(
+        savedPosts.filter((post) =>
+          post.title.toLowerCase().includes(query.toLowerCase())
+        )
+      );
+    } else {
+      setSearchResults(savedPosts);
     }
   };
 
-  // Handler for clicking on a search item
-  const handleItemPress = async (item: string) => {};
+  const handlePostClick = (item: any) =>
+    router.push({ pathname: "../ads/details", params: { id: item.id } });
 
   return (
     <View style={styles.container}>
@@ -40,6 +92,7 @@ export default function SavedScreen() {
 
           headerSearchBarOptions: {
             placeholder: "Search message",
+            onChangeText: (text: any) => handleSearch(text),
           },
         }}
       />
@@ -48,25 +101,55 @@ export default function SavedScreen() {
       <FlatList
         data={searchResults}
         contentContainerStyle={styles.list}
-        keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleItemPress(item)}>
-            <ListItem bottomDivider>
-              <ListItem.Content>
-                <ListItem.Title style={styles.resultText}>
-                  {item.title}
-                </ListItem.Title>
-              </ListItem.Content>
-              {/* Right-side Icon */}
-              <Icon name="chevron-right" size={24} color="#000" />
-            </ListItem>
-          </TouchableOpacity>
-        )}
         ListEmptyComponent={
-          <Text style={styles.noResultsText}>No results found</Text>
+          loadingStates.fetchSaved || postError ? null : EmptyListingCard
         }
-        ListFooterComponent={() => <View style={styles.footerSpace} />}
+        renderItem={({ item }: { item: any }) => (
+          <PostCardLandscape
+            onPress={() => handlePostClick(item)}
+            deleteSaved={removeSaved}
+            size={width - 8}
+            post={item}
+            hideSave
+          />
+        )}
+        keyExtractor={(item: any) => item.id.toString()}
+        onEndReached={loadMorePost}
+        onEndReachedThreshold={0.5}
+        refreshing={refreshing}
+        onRefresh={() => {
+          setRefreshing(true);
+          resetSavedPosts();
+          fetchSavedPosts({ page: 1, perPage: 10 }).finally(() =>
+            setRefreshing(false)
+          );
+        }}
+        ListFooterComponent={
+          loadingStates.fetchSaved ? (
+            <View style={{ paddingVertical: 20 }}>
+              <ActivityIndicator size="small" />
+            </View>
+          ) : postError ? (
+            <View style={{ paddingVertical: 50 }}>
+              <Text>{postError}</Text>
+              <Button
+                onPress={() => {
+                  loadMorePost();
+                }}
+                type="clear"
+                title={"Try again"}
+                icon={{ name: "replay" }}
+              />
+            </View>
+          ) : null
+        }
+        initialNumToRender={10}
+        removeClippedSubviews
+      />
+      <LoadingBar
+        style={{ position: "absolute", top: 0, zIndex: 100 }}
+        loading={loadingStates.savePost}
       />
     </View>
   );
@@ -75,11 +158,11 @@ export default function SavedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9f9f9",
-    padding: 0
+    padding: 0,
   },
   list: {
-    margin: 12,
+    gap: 8,
+    paddingBottom: 8,
   },
   footerSpace: {
     padding: 20,

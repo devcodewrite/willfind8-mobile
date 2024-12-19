@@ -1,6 +1,6 @@
 import { Button, lightColors } from "@rneui/themed";
 
-export default function SavedButton({
+export default function DeleteButton({
   onPress,
   active,
 }: {
@@ -12,9 +12,9 @@ export default function SavedButton({
       onPress={onPress}
       type="clear"
       icon={{
-        name: "bookmark",
+        name: "close",
         size: 24,
-        color: active ? lightColors.success : lightColors.black,
+        color: lightColors.error,
       }}
       buttonStyle={{ paddingHorizontal: 0, marginHorizontal: 0 }}
     />

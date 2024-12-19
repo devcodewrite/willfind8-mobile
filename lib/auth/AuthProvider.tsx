@@ -53,6 +53,7 @@ interface AuthContextProps {
   user: UserData | null;
   authToken: string | null;
   login: (userData: UserData, authToken: string) => void;
+  updateUser: (userData: UserData) => void;
   logout: () => void;
   refreshUserData: () => Promise<void>;
   isAuthenticated: boolean;
@@ -107,23 +108,29 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     await setSecureItem("authToken", token);
   };
 
+  const updateUser = async (userData: UserData) => {
+    setUser(userData);
+    await setSecureItem("user", JSON.stringify(userData));
+  };
+
   // Handle logout by clearing user data and token
   const logout = async () => {
-    setUser(null);
-    setAuthToken(null);
     await deleteSecureItem("user");
     await deleteSecureItem("authToken");
+    setAuthToken(null);
+    setUser(null);
   };
 
   // Refresh user data
   const refreshUserData = async (
     embed: string = "country,userType,gender,countPostsViews,countPosts,countSavedPosts,countSavedPosts"
   ) => {
-    if (!authToken || !user) return;
+    if (!authToken || !user || refreshing) return;
 
+    setRefreshing(true);
     try {
       const { data: responseData } = await api.get(`/api/users/${user.id}`, {
-        params: embed,
+        params: { embed },
       });
       const { success, message, result } = responseData;
       if (!success) {
@@ -151,6 +158,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         authToken,
         login,
         logout,
+        updateUser,
         refreshUserData,
         isAuthenticated,
         refreshing,

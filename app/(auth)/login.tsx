@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, View } from "react-native";
 import { Button, lightColors, Text } from "@rneui/themed";
 import { StyleSheet } from "react-native";
@@ -12,17 +12,19 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 
 // Validation schema using Yup
 const LoginSchema = Yup.object().shape({
+  auth_field: Yup.string().required(),
   email: Yup.string()
     .email("Invalid email address")
     .when("auth_field", {
       is: "email",
-      then: (schema) => schema.required("Email is required"),
+      then: (schema: any) => schema.required("Email is required"),
+      otherwise: (schema: any) => schema.notRequired(),
     }),
   phone: Yup.string()
     .matches(/^\+?[0-9]{10,15}$/, "Invalid phone number")
     .when("auth_field", {
       is: "phone",
-      then: (schema) => schema.required("Phone number is required"),
+      then: (schema: any) => schema.required("Phone number is required"),
     }),
   password: Yup.string()
     .min(6, "Password must be at least 6 characters")
@@ -39,28 +41,36 @@ const LoginScreen = () => {
   } = useFetchAuth();
   const [auth_field, setAuthField] = useState<"email" | "phone">("email"); // Determines whether email or phone is active
   const { login } = useAuth();
+
+  useEffect(() => {
+    if (error) Alert.alert("Login Failed!", error);
+    else if (response && typeof response !== "boolean") {
+      login(response, extra?.authToken || "");
+      router.dismissAll();
+      router.push("/(tabs)");
+    }
+  }, [response, error]);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Sign In</Text>
       </View>
       <Formik
-        initialValues={{ email: "", phone: "", password: "", auth_field }}
+        initialValues={{
+          email: "",
+          phone: "",
+          password: "",
+          auth_field: "email",
+        }}
         validationSchema={LoginSchema}
         onSubmit={async (values) => {
-          await requestLogin(values);
-          if (error) Alert.alert("Login Failed!", error);
-          else if (response && typeof response !== "boolean") {
-            login(response, extra?.authToken || "");
-            router.dismissAll();
-            router.push("/(tabs)");
-          } else {
-            Alert.alert("Login Failed", "No responses, please try agian!");
-          }
+          requestLogin(values);
         }}
       >
         {({
           handleChange,
+          setFieldValue,
           handleBlur,
           handleSubmit,
           values,
@@ -69,16 +79,24 @@ const LoginScreen = () => {
           isValid,
         }) => (
           <View style={styles.content}>
-            <Button
-              title={`Switch to ${auth_field === "email" ? "Phone" : "Email"}`}
-              buttonStyle={styles.toggleButton}
-              onPress={() =>
-                setAuthField(auth_field === "email" ? "phone" : "email")
-              }
-              titleStyle={{ color: lightColors.grey2 }}
-              type="clear"
-              icon={{ name: "swap-horiz", color: lightColors.grey2 }}
-            />
+            {false && (
+              <Button
+                title={`Switch to ${
+                  auth_field === "email" ? "Phone" : "Email"
+                }`}
+                buttonStyle={styles.toggleButton}
+                onPress={() => {
+                  setAuthField(auth_field === "email" ? "phone" : "email");
+                  setFieldValue(
+                    "auth_field",
+                    auth_field === "email" ? "phone" : "email"
+                  );
+                }}
+                titleStyle={{ color: lightColors.grey2 }}
+                type="clear"
+                icon={{ name: "swap-horiz", color: lightColors.grey2 }}
+              />
+            )}
             {auth_field === "email" && (
               <TextInput
                 label="Email"
@@ -144,17 +162,6 @@ const LoginScreen = () => {
                   }}
                 >
                   Sign up
-                </Text>
-              </Text>
-            </View>
-            <View style={{ paddingVertical: 10 }}>
-              <Text>
-                By continuing you agree to the{" "}
-                <Text
-                  style={{ color: lightColors.primary }}
-                  onPress={() => router.push("/pages/terms")}
-                >
-                  Policy and Rules
                 </Text>
               </Text>
             </View>

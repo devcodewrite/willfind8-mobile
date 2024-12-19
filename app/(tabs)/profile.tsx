@@ -2,13 +2,19 @@
 import ProfileHeader from "@/components/ui/ProfileHeader";
 import SettingOption from "@/components/ui/SettingOption";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { router } from "expo-router";
-import { useEffect } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect } from "react";
 import { View, StyleSheet, Alert, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
-  const { logout, user } = useAuth();
+  const { logout, user, refreshUserData } = useAuth();
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshUserData();
+    }, [refreshUserData])
+  );
 
   useEffect(() => {
     if (!user) router.push("/(tabs)");
@@ -64,6 +70,7 @@ export default function ProfileScreen() {
           email={user?.email}
           avatarUrl={user?.photo_url}
           onPress={handlePersonalInfoPress}
+          joined={user?.created_at_formatted}
         />
         {/* Settings Options */}
         <SettingOption
@@ -71,11 +78,7 @@ export default function ProfileScreen() {
           icon="post-add"
           onPress={handleMyListingPress}
         />
-        <SettingOption
-          title="Notifications"
-          icon="notifications"
-          onPress={handleNotificationPress}
-        />
+
         {/* Divider for separating account management */}
         <View style={styles.divider} />
 

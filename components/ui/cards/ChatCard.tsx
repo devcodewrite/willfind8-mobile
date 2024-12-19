@@ -4,20 +4,33 @@ import { StyleSheet, TouchableOpacity } from "react-native";
 import { View } from "react-native";
 import ReadMore from "@fawazahmed/react-native-read-more";
 import CustomAvatar from "../CustomAvatar";
+import moment from "moment";
 
-export default function ChatCard({ item }) {
+export interface Message {
+  id: number;
+  avatar?: string;
+  sender?: string;
+  text: string;
+  date: string;
+  likes?: number;
+  left?: boolean;
+  replies?: Array<Message>;
+}
+export default function ChatCard({ item }: { item: Message }) {
   return (
     <View style={styles.messageContainer}>
-      <View style={styles.messageRow}>
-        <CustomAvatar
-          source={{ uri: item.avatar }}
-          rounded={true}
-          size={30}
-          placeholder={require("@/assets/images/Loading_icon.gif")} // Replace with a local default image if needed
-        />
+      <View style={[styles.messageRow, item.left && styles.left]}>
+        {item.avatar && (
+          <CustomAvatar
+            source={{ uri: item.avatar }}
+            rounded={true}
+            size={30}
+            placeholder={require("@/assets/images/icons8-test-account-96.png")} // Replace with a local default image if needed
+          />
+        )}
 
         <View style={styles.messageContent}>
-          <Text style={styles.senderText}>{item.sender}</Text>
+          {item.sender && <Text style={styles.senderText}>{item.sender}</Text>}
 
           {/* Message text with Read more */}
           <ReadMore
@@ -30,21 +43,25 @@ export default function ChatCard({ item }) {
           >
             {item.text}
           </ReadMore>
-          <Text style={styles.dateText}>{item.date}</Text>
-
-          <View style={styles.actionsRow}>
-            <TouchableOpacity style={styles.likeButton}>
-              <FontAwesome name="thumbs-o-up" size={16} color="#888" />
-              <Text style={styles.actionText}> {item.likes} Like</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text style={styles.actionText}>Reply</Text>
-            </TouchableOpacity>
+          <View style={{ flex: 1, alignItems: "flex-end" }}>
+            <Text style={styles.dateText}>{moment(item.date).fromNow()}</Text>
           </View>
+
+          {item.replies && (
+            <View style={styles.actionsRow}>
+              <TouchableOpacity style={styles.likeButton}>
+                <FontAwesome name="thumbs-o-up" size={16} color="#888" />
+                <Text style={styles.actionText}> {item.likes} Like</Text>
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <Text style={styles.actionText}>Reply</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
 
-      {item.replies.length > 0 && (
+      {item.replies && item.replies.length > 0 && (
         <View style={styles.repliesContainer}>
           {item.replies.map((reply) => (
             <View key={reply.id} style={styles.replyRow}>
@@ -52,19 +69,21 @@ export default function ChatCard({ item }) {
                 size={30}
                 rounded
                 source={{ uri: reply.avatar }}
-                placeholder={require("@/assets/images/Loading_icon.gif")}
+                placeholder={require("@/assets/images/icons8-test-account-96.png")}
               />
               <View style={styles.replyContent}>
                 <Text style={styles.senderText}>{reply.sender}</Text>
                 <Text style={styles.messageText}>{reply.text}</Text>
                 <Text style={styles.dateText}>{reply.date}</Text>
 
-                <View style={styles.actionsRow}>
-                  <TouchableOpacity style={styles.likeButton}>
-                    <FontAwesome name="thumbs-o-up" size={16} color="#888" />
-                    <Text style={styles.actionText}> {reply.likes} Like</Text>
-                  </TouchableOpacity>
-                </View>
+                {item.replies && (
+                  <View style={styles.actionsRow}>
+                    <TouchableOpacity style={styles.likeButton}>
+                      <FontAwesome name="thumbs-o-up" size={16} color="#888" />
+                      <Text style={styles.actionText}> {reply.likes} Like</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             </View>
           ))}
@@ -86,6 +105,12 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 10,
     overflow: "hidden",
+    marginStart: 50,
+  },
+  left: {
+    backgroundColor: "#E0F7EA",
+    marginEnd: 50,
+    marginStart: 0,
   },
   messageContent: {
     flex: 1,
@@ -99,7 +124,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   messageText: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#555",
     marginTop: 2,
   },
@@ -107,6 +132,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#888",
     marginTop: 2,
+    alignSelf: "flex-end",
   },
   actionsRow: {
     flexDirection: "row",

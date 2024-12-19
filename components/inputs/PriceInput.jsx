@@ -8,6 +8,7 @@ export default function PriceInput({
   negotiable,
   onToggleNegotiable,
   errorMessage,
+  containerStyle
 }) {
   return (
     <Input
@@ -20,7 +21,7 @@ export default function PriceInput({
       returnKeyLabel="Done"
       errorMessage={errorMessage}
       inputContainerStyle={styles.inputContainer}
-      containerStyle={styles.input}
+      containerStyle={[styles.input,containerStyle]}
       leftIcon={() => (
         <Text style={{ fontWeight: "600", fontSize: 16 }}>GHC</Text>
       )}

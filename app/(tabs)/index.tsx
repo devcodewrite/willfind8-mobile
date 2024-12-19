@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Button, Text } from "@rneui/themed";
-import { useRef, useState } from "react";
-import { useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigation, useRouter } from "expo-router";
 
 import CategoryGrid from "@/components/ui/lists/CategoryGrid";
 import PostCardLandscape from "@/components/ui/cards/PostCardLandscape";
@@ -17,13 +17,27 @@ import SearchBar from "@/components/inputs/SearchBar";
 import { EmptyListingCard } from "@/components/ui/cards/EmptyListingCard";
 import usePostStore from "@/hooks/store/useFetchPosts";
 import useCategoryStore from "@/hooks/store/useFetchCategories";
+import { useFilterStore } from "@/hooks/store/filterStore";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useAuthModal } from "@/lib/auth/AuthModelProvider";
+import { useFocusEffect } from "expo-router";
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 export default function HomeScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { user, refreshUserData } = useAuth();
+  const { showLoginModal } = useAuthModal();
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshUserData();
+    }, [refreshUserData])
+  );
+
   const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollRef = useRef<FlatList>(null); // Ref for the FlatList
   const translateY = scrollY.interpolate({
     inputRange: [0, 100],
     outputRange: [0, -150],
@@ -43,15 +57,42 @@ export default function HomeScreen() {
     error: postError,
     items: PostsMap,
     latestPostIds,
+    addToSavedPost,
     fetchLatestPosts,
+    resetLatestPosts,
   } = usePostStore((state) => state);
+  const { setDefaultFilters } = useFilterStore();
+
+  const lastPressRef = useRef<number | null>(null);
+  const DOUBLE_PRESS_DELAY = 300; // Double press threshold in milliseconds
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("tabPress", () => {
+      const now = Date.now();
+      if (
+        lastPressRef.current &&
+        now - lastPressRef.current < DOUBLE_PRESS_DELAY
+      ) {
+        scrollRef.current?.scrollToOffset({ animated: true, offset: 0 }); // Scroll to the top
+      }
+      lastPressRef.current = now;
+    });
+
+    return unsubscribe; // Clean up the event listener
+  }, [navigation]);
 
   const loadMorePost = async () => {
     await fetchLatestPosts({ sort: "created_at", op: "latest", perPage: 10 });
   };
 
-  const handlePostClick = (item) =>
-    router.push({ pathname: "/ads/details", params: { id: item.id } });
+  const handlePostClick = (item: any) =>
+    router.push({ pathname: "../ads/details", params: { id: item.id } });
+
+  const handleToggleSaved = (postId: number) => {
+    if (!user) return showLoginModal();
+    addToSavedPost(postId, user);
+  };
 
   return (
     <>
@@ -60,13 +101,16 @@ export default function HomeScreen() {
       >
         <TouchableOpacity
           onPress={() => {
-            router.push("/search/search");
+            setDefaultFilters();
+            router.push("../search/search");
           }}
           style={{ width: "100%" }}
         >
           <SearchBar
+            search=""
             onPress={() => {
-              router.push("/search/search");
+              setDefaultFilters();
+              router.push("../search/search");
             }}
             placeholder="What are you looking for?"
             disabled
@@ -74,6 +118,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Animated.View>
       <AnimatedFlatList
+        ref={scrollRef}
         contentContainerStyle={{
           gap: 8,
           paddingBottom: 8,
@@ -94,20 +139,23 @@ export default function HomeScreen() {
             </View>
           </>
         }
-        ListEmptyComponent={loadingStates.fetchLatest || postError ? null : EmptyListingCard}
+        ListEmptyComponent={
+          loadingStates.fetchLatest || postError ? null : EmptyListingCard
+        }
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true }
         )}
-        renderItem={({ item }) => (
+        renderItem={({ item }: { item: any }) => (
           <PostCardLandscape
             onPress={() => handlePostClick(item)}
+            toggleSaved={(id) => handleToggleSaved(id)}
             size={width - 8}
-            {...item}
+            post={item}
           />
         )}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item: any) => item.id.toString()}
         data={latestPostIds.map((id) => PostsMap[id])}
         onEndReached={loadMorePost}
         onEndReachedThreshold={0.5}
@@ -115,6 +163,7 @@ export default function HomeScreen() {
         onRefresh={() => {
           setRefreshing(true);
           fetchCategories({ perPage: 20 });
+          resetLatestPosts();
           fetchLatestPosts({ page: 1, op: "latest", perPage: 10 }).finally(() =>
             setRefreshing(false)
           );

@@ -35,6 +35,7 @@ export function LabelInputList({
     }>;
     rightIcon?: IconProps;
     numberOfLines?: number;
+    errorMessage?: string;
   }>;
   title?: string;
   heading?: string;
@@ -75,6 +76,7 @@ export function LabelInputList({
                 type,
                 rightIcon,
                 numberOfLines,
+                errorMessage,
               },
               i
             ) => (
@@ -112,7 +114,11 @@ export function LabelInputList({
                         borderBottomWidth: 0,
                       }}
                       numberOfLines={numberOfLines}
-                      containerStyle={styles.inputContainer}
+                      containerStyle={[
+                        styles.inputContainer,
+                        errorMessage && styles.inputError,
+                      ]}
+                      errorMessage={errorMessage}
                     />
                   )}
                   {type === "number" && (
@@ -124,7 +130,11 @@ export function LabelInputList({
                       inputContainerStyle={{
                         borderBottomWidth: 0,
                       }}
-                      containerStyle={styles.inputContainer}
+                      containerStyle={[
+                        styles.inputContainer,
+                        errorMessage && styles.inputError,
+                      ]}
+                      errorMessage={errorMessage}
                     />
                   )}
                   {type === "radio" &&
@@ -193,8 +203,11 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     marginVertical: 0,
-    height: 40,
     paddingVertical: 0,
+    height: 40,
+  },
+  inputError: {
+    height:'auto'
   },
   subtitle: {
     fontSize: 16,

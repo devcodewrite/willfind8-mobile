@@ -12,17 +12,26 @@ import { Card, Text, Icon } from "@rneui/themed";
 import { Image } from "expo-image";
 import { CountLabel } from "./CountLabel";
 import SavedButton from "./SavedButton";
+import { useAuthModal } from "@/lib/auth/AuthModelProvider";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { SavedUser } from "@/hooks/store/useFetchPosts";
 
 const PostCard = ({
+  id,
   title,
   count_pictures,
   price_formatted,
   city,
   picture,
+  user_id,
+  savedByLoggedUser,
   size = "100%",
-  onPress = () => {},
-  style = {},
+  onPress,
+  toggleSaved,
+  style,
 }: {
+  user_id: number | null;
+  id: number;
   picture: {
     filename: string;
     url: {
@@ -33,6 +42,7 @@ const PostCard = ({
     };
   };
   count_pictures?: number;
+  savedByLoggedUser?: Array<SavedUser>;
   title: string;
   price_formatted: string;
   city?: {
@@ -43,9 +53,11 @@ const PostCard = ({
   };
   size?: DimensionValue;
   onPress?: (event: GestureResponderEvent) => void;
+  toggleSaved?: (id: number) => void;
   style?: ViewStyle;
 }): React.JSX.Element => {
   const placeholder = require("@/assets/images/Loading_icon.gif");
+  const { isAuthenticated, user } = useAuth();
 
   return (
     <TouchableOpacity activeOpacity={0.75} style={style} onPress={onPress}>
@@ -75,7 +87,14 @@ const PostCard = ({
 
           <View style={styles.priceSection}>
             <Text style={styles.price_formatted}>{price_formatted}</Text>
-            <SavedButton onPress={() => Alert.alert("Added")} />
+            <SavedButton
+              active={
+                !!user &&
+                savedByLoggedUser &&
+                !!savedByLoggedUser.find((save) => user_id == user.id)
+              }
+              onPress={() => toggleSaved && toggleSaved(id)}
+            />
           </View>
 
           {city && (

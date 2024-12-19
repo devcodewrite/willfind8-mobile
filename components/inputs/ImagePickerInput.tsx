@@ -12,17 +12,29 @@ import Constants from "expo-constants";
 import { Avatar, Button, Text } from "@rneui/themed";
 import { Ionicons } from "@expo/vector-icons";
 
-const appName = Constants.expoConfig.name;
+const appName = Constants?.expoConfig?.name || "";
 
 export default function ImagePickerInput({
   value = [],
-  mainImageValue = "",
+  mainImageValue,
   onImagesSelected,
   maxImages = 5,
   onMainImageSelected,
+  errorMessage,
+  imagePlaceHolder,
+}: {
+  value: Array<string>;
+  mainImageValue?: string;
+  onImagesSelected: (imgs: Array<string | undefined>) => void;
+  maxImages?: number;
+  onMainImageSelected?: (img?: string | null) => void;
+  errorMessage?: string;
+  imagePlaceHolder?: Array<string>;
 }) {
-  const [imageUris, setImageUris] = useState(value);
-  const [mainImageUri, setMainImageUri] = useState(mainImageUri || null);
+  const [imageUris, setImageUris] = useState<Array<string | undefined>>(value);
+  const [mainImageUri, setMainImageUri] = useState<string | null>(
+    mainImageValue || null
+  );
 
   const showImagePickerOptions = () => {
     Alert.alert("Select Image", "Choose an option", [
@@ -38,7 +50,7 @@ export default function ImagePickerInput({
     ]);
   };
 
-  const handleImagePicker = async (isCamera) => {
+  const handleImagePicker = async (isCamera: boolean) => {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
     const libraryPermissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -57,7 +69,7 @@ export default function ImagePickerInput({
       });
     } else {
       result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: 'images',
         allowsMultipleSelection: true,
         quality: 0.5,
         selectionLimit: maxImages,
@@ -78,7 +90,7 @@ export default function ImagePickerInput({
     }
   };
 
-  const storeImageInAppFolder = async (imageUri) => {
+  const storeImageInAppFolder = async (imageUri: string) => {
     try {
       const folderUri = `${FileSystem.documentDirectory}${appName}/`;
       const folderInfo = await FileSystem.getInfoAsync(folderUri);
@@ -101,19 +113,19 @@ export default function ImagePickerInput({
     }
   };
 
-  const removeImage = (uri) => {
+  const removeImage = (uri: string) => {
     const updatedUris = imageUris.filter((imageUri) => imageUri !== uri);
     setImageUris(updatedUris);
     if (uri === mainImageUri) selectMainImage(updatedUris[0] || null); // Reset main image if removed
     if (onImagesSelected) onImagesSelected(updatedUris);
   };
 
-  const selectMainImage = (uri) => {
+  const selectMainImage = (uri: string | null) => {
     setMainImageUri(uri);
     if (onMainImageSelected) onMainImageSelected(uri);
   };
 
-  const renderImageItem = ({ item }) => (
+  const renderImageItem = ({ item }: { item: string }) => (
     <TouchableOpacity
       onPress={() => selectMainImage(item)}
       style={styles.imageWrapper}
@@ -137,7 +149,7 @@ export default function ImagePickerInput({
   return (
     <View style={styles.container}>
       <FlatList
-        data={imageUris}
+        data={imageUris?.length > 0 ? imageUris : imagePlaceHolder}
         renderItem={renderImageItem}
         keyExtractor={(item, index) => index.toString()}
         horizontal
@@ -158,6 +170,7 @@ export default function ImagePickerInput({
       <Text style={styles.caption}>
         Selected {imageUris.length} / {maxImages} images
       </Text>
+      {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
     </View>
   );
 }
@@ -211,5 +224,10 @@ const styles = StyleSheet.create({
     color: "gray",
     marginTop: 4,
     fontStyle: "italic",
+  },
+  error: {
+    fontSize: 14,
+    paddingHorizontal: 8,
+    color: "red",
   },
 });

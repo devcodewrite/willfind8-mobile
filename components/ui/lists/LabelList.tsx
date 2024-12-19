@@ -26,6 +26,7 @@ export function LabelList({
     onPress?: (e: any) => void;
     title: string;
     value?: string | ReactNode;
+    subtitle?: string | ReactNode;
     icon?: IconProps;
     rightIcon?: IconProps;
   }>;
@@ -59,46 +60,59 @@ export function LabelList({
         </View>
         <View style={styles.container}>
           {data ? (
-            data.map(({ onPress, title, icon, value, rightIcon }, i) => (
-              <ListItem
-                onPress={onPress}
-                key={i.toString()}
-                containerStyle={[styles.item, itemContainerStyle]}
-                bottomDivider={i < data.length - 1}
-              >
-                {icon ? (
-                  <View style={{ width: 25 }}>
-                    <Icon {...icon} />
-                  </View>
-                ) : null}
-                {typeof value === "string" ||
-                typeof value === "number" ||
-                title ? (
-                  <ListItem.Content style={styles.content}>
-                    <ListItem.Title style={styles.title}>
-                      {title}
-                    </ListItem.Title>
-                    <ListItem.Subtitle
-                      style={[styles.subtitle, { color: lightColors.grey2 }]}
-                      selectable
-                    >
-                      {value}
-                    </ListItem.Subtitle>
-                  </ListItem.Content>
-                ) : (
-                  value && (
-                    <TouchableWithoutFeedback onPress={onPress}>
-                      <View>{value}</View>
-                    </TouchableWithoutFeedback>
-                  )
-                )}
-                {rightIcon && (
-                  <View style={{ marginEnd: 5 }}>
-                    <Icon {...rightIcon} />
-                  </View>
-                )}
-              </ListItem>
-            ))
+            data.map(
+              ({ onPress, title, icon, value, subtitle, rightIcon }, i) => (
+                <ListItem
+                  onPress={onPress}
+                  key={i.toString()}
+                  containerStyle={[styles.item, itemContainerStyle]}
+                  bottomDivider={i < data.length - 1}
+                >
+                  {icon ? (
+                    <View style={{ width: 25 }}>
+                      <Icon {...icon} />
+                    </View>
+                  ) : null}
+                  {typeof value === "string" ||
+                  typeof value === "number" ||
+                  title ? (
+                    <ListItem.Content style={styles.content}>
+                      <ListItem.Title style={styles.title}>
+                        {title}
+                      </ListItem.Title>
+                      <ListItem.Subtitle
+                        style={[styles.subtitle, { color: lightColors.grey2 }]}
+                        selectable
+                      >
+                        {value}
+                      </ListItem.Subtitle>
+                      {subtitle && (
+                        <ListItem.Subtitle
+                          style={[
+                            styles.subtitle,
+                            { color: lightColors.grey3, fontSize: 12 },
+                          ]}
+                          selectable
+                        >
+                          {subtitle}
+                        </ListItem.Subtitle>
+                      )}
+                    </ListItem.Content>
+                  ) : (
+                    value && (
+                      <TouchableWithoutFeedback onPress={onPress}>
+                        <View>{value}</View>
+                      </TouchableWithoutFeedback>
+                    )
+                  )}
+                  {rightIcon && (
+                    <View style={{ marginEnd: 5 }}>
+                      <Icon {...rightIcon} />
+                    </View>
+                  )}
+                </ListItem>
+              )
+            )
           ) : (
             <ListItem containerStyle={styles.item}>
               {icon ? (

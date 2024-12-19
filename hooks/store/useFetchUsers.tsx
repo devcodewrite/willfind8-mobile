@@ -1,18 +1,20 @@
-interface User {
+import { create } from "zustand";
+
+export interface User {
   id: number;
   name: string;
   username: string;
-  country_code: string;
+  country_code: string | null;
   language_code: string;
   user_type_id: number | null;
   gender_id: number;
   photo?: string | null;
   about?: string | null;
   auth_field: "email" | "phone" | "string";
-  email: string;
+  email?: string | null;
   phone: string;
   phone_national: string;
-  phone_country: string;
+  phone_country: string | null;
   phone_hidden: boolean;
   disable_comments?: boolean;
   ip_addr?: string;
@@ -22,6 +24,8 @@ interface User {
   phone_token: string | null;
   email_verified_at: string | null;
   phone_verified_at: string | null;
+  password?: string;
+  password_confirmation?: string;
   accept_terms: boolean;
   accept_marketing_offers: boolean;
   time_zone: string | null;
@@ -37,5 +41,3 @@ interface User {
   p_is_online?: boolean;
   country_flag_url?: string | null;
 }
-
-export { User };

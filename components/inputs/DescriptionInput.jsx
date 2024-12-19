@@ -14,15 +14,17 @@ export default function DescriptionInput({
   onFocus = () => {},
   onBlur = () => {},
   inputStyle = {},
+  errorMessage,
 }) {
   const ref = useRef();
   useEffect(() => {
-    inputRef.current = ref.current;
+    if (inputRef) inputRef.current = ref.current;
   }, []);
 
   return (
     <View style={styles.container}>
       <Text style={{ padding: 10 }}>Description</Text>
+      {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
       <RichToolbar
         editor={ref}
         actions={[
@@ -65,5 +67,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     borderColor: lightColors.greyOutline,
     borderWidth: 1,
+  },
+  error: {
+    fontSize: 14,
+    paddingHorizontal: 8,
+    color: "red",
+    marginBottom: 5,
   },
 });

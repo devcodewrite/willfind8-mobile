@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { Button, Header, Icon, lightColors, Text } from "@rneui/themed";
 import { router } from "expo-router";
 import {
@@ -14,18 +14,22 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DescriptionCard from "@/components/ui/cards/DescriptionCard";
 import ChatWithSellerCard from "@/components/ui/cards/ChatWithSellerCard";
 import SellerAdsList from "@/components/ui/lists/SellerAdsList";
-import FeedbackChat from "@/components/ui/lists/FeedbackChat";
 import { useRouteInfo } from "expo-router/build/hooks";
 import PostSlider from "@/components/ui/cards/PostSlider";
 import { EmptyListingCard } from "@/components/ui/cards/EmptyListingCard";
 import usePostStore from "@/hooks/store/useFetchPosts";
 import PostSepecCard from "@/components/ui/cards/PostSepecCard";
 import LoadingBar from "@/components/ui/cards/LoadingBar";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useAuthModal } from "@/lib/auth/AuthModelProvider";
+import SavedButton from "@/components/ui/cards/SavedButton";
 
 export default function DetailsLayout() {
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
   const route = useRouteInfo();
+  const { user } = useAuth();
+  const { showLoginModal } = useAuthModal();
   const { id } = route.params;
   const postId = parseInt(id?.toString());
   const {
@@ -36,9 +40,12 @@ export default function DetailsLayout() {
     fetchRelatedPosts,
     fetchPost,
     fetchSellerPosts,
+    addToSavedPost,
     sellerPostIds,
+    extras,
   } = usePostStore();
   const post = items[postId];
+
   const userPosts = sellerPostIds.map((id) => items[id]);
   const sepecs = useRef<
     Array<{ id: number; name: string; value: string; type: string }>
@@ -66,8 +73,8 @@ export default function DetailsLayout() {
   }, [post]);
 
   useEffect(() => {
-    if (post.user_id)
-      fetchSellerPosts(post.user_id, {
+    if (post && post.user)
+      fetchSellerPosts(post.user?.id, {
         sort: "created_at",
         op: "latest",
         perPage: 5,
@@ -80,6 +87,11 @@ export default function DetailsLayout() {
       op: "search",
       perPage: 10,
     });
+  };
+
+  const handleToggleSaved = (postId: number) => {
+    if (user) addToSavedPost(postId, user);
+    else showLoginModal();
   };
 
   // Interpolating opacity of the header based on scroll position
@@ -123,13 +135,14 @@ export default function DetailsLayout() {
             </Text>
           }
           rightComponent={
-            <TouchableOpacity
-              activeOpacity={0.65}
-              onPress={() => router.back()}
-              style={{ margin: 0, paddingHorizontal: 0, padding: 0 }}
-            >
-              <Icon name="bookmark-outline" color="black" size={32} />
-            </TouchableOpacity>
+            <SavedButton
+              active={
+                !!user &&
+                post.savedByLoggedUser &&
+                !!post.savedByLoggedUser.find((save) => save.user_id == user.id)
+              }
+              onPress={() => handleToggleSaved(postId)}
+            />
           }
           centerContainerStyle={{ alignSelf: "center" }}
           backgroundColor="white"
@@ -155,10 +168,13 @@ export default function DetailsLayout() {
               {...post}
             />
             <PostSepecCard list={sepecs.current} />
-            <DescriptionCard htmlContent={post?.description.toString()} />
+            <DescriptionCard htmlContent={post?.description} />
             <ChatWithSellerCard />
-            <SellerAdsList post={post} userPosts={userPosts} />
-            <FeedbackChat data={[]} />
+            <SellerAdsList
+              extra={extras.seller}
+              post={post}
+              userPosts={userPosts}
+            />
             <LoadingBar loading={loadingStates.fetchPost} />
           </View>
         }
@@ -170,8 +186,7 @@ export default function DetailsLayout() {
           return (
             <PostCardLandscape
               size={"100%"}
-              showSubCategory={false}
-              {...item}
+              post={item}
               style={{ paddingHorizontal: 10 }}
               onPress={() =>
                 router.push({
