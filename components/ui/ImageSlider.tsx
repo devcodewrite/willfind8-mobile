@@ -45,7 +45,7 @@ export default function ImageSlider({
       style={styles.slide}
     >
       <Image
-        source={{ uri: item.url.full }}
+        source={{ uri: item?.url?.full }}
         placeholder={blurhash}
         style={styles.image}
         cachePolicy={"memory"}

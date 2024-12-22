@@ -5,7 +5,6 @@ import {
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
@@ -16,6 +15,8 @@ import usePostStore from "@/hooks/store/useFetchPosts";
 import useCategoryStore from "@/hooks/store/useFetchCategories";
 import { AuthModalProvider } from "@/lib/auth/AuthModelProvider";
 import LoadingScreen from "@/components/ui/LoadingScreen";
+import { ActionSheetProvider } from '@expo/react-native-action-sheet';
+
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -44,124 +45,129 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <AuthModalProvider>
-        <AuthProvider>
-          <Stack>
-            <Stack.Screen
-              name="(tabs)"
-              options={{ title: "", headerShown: false }}
-            />
-            <Stack.Screen
-              name="(auth)"
-              options={{ headerShown: false, title: "" }}
-            />
-            <Stack.Screen
-              name="ads/add"
-              options={{ animation: "slide_from_bottom" }}
-            />
-            <Stack.Screen
-              name="ads/update"
-              getId={({ params }) => params?.id}
-              options={{ animation: "slide_from_bottom" }}
-            />
-            <Stack.Screen
-              name="ads/details"
-              getId={({ params }) => new Date().getTime().toString()}
-              options={{ headerShown: false, headerTitle: "" }}
-            />
-            <Stack.Screen
-              name="ads/seller"
-              getId={({ params }) => params?.id}
-              options={{ title: "", headerShown: true }}
-            />
-            <Stack.Screen
-              name="ads/fullscreen"
-              options={{ headerShown: false, animation: "fade" }}
-            />
-            <Stack.Screen
-              name="ads/chat"
-              getId={({ params }) => params?.id}
-              options={{ headerTitle: "" }}
-            />
-            <Stack.Screen
-              name="search/search"
-              options={{ headerShown: false, title: "Search" }}
-            />
-            <Stack.Screen
-              name="search/categories"
-              options={{ headerTitle: "Categories", presentation: "modal" }}
-              getId={({ params }) => params?.parentId}
-            />
-            <Stack.Screen
-              name="search/categories_menu"
-              options={{
-                headerTitle: "All Categories",
-                presentation: "modal",
-              }}
-              getId={({ params }) => new Date().toISOString()}
-            />
-            <Stack.Screen
-              name="search/results"
-              options={{ headerShown: false }}
-              getId={({ params }) => params?.category_id}
-            />
-            <Stack.Screen
-              name="search/cities"
-              options={{ presentation: "modal", headerTitle: "Location" }}
-            />
-            <Stack.Screen
-              name="search/cities_menu"
-              options={{ presentation: "modal", headerTitle: "Location" }}
-            />
-            <Stack.Screen
-              name="search/filters"
-              options={{
-                presentation: "fullScreenModal",
-                headerTitle: "Filter",
-              }}
-            />
-            <Stack.Screen
-              name="(user)/business-info"
-              options={{ title: "Business Information" }}
-            />
-            <Stack.Screen
-              name="(user)/close-account"
-              options={{ title: "Close Account" }}
-            />
-            <Stack.Screen
-              name="(user)/mylisting"
-              options={{ title: "My Listing" }}
-            />
-            <Stack.Screen
-              name="(user)/notifications"
-              options={{ title: "Notifications" }}
-            />
-            <Stack.Screen
-              name="(user)/personal-info"
-              options={{ title: "Personal Information" }}
-            />
-            <Stack.Screen
-              name="(user)/signin-security"
-              options={{ title: "SignIn & Security" }}
-            />
+      <ActionSheetProvider>
+        <AuthModalProvider>
+          <AuthProvider>
+            <Stack>
+              <Stack.Screen
+                name="(tabs)"
+                options={{ title: "", headerShown: false }}
+              />
+              <Stack.Screen
+                name="(auth)"
+                options={{ headerShown: false, title: "" }}
+              />
+              <Stack.Screen
+                name="ads/add"
+                options={{ animation: "slide_from_bottom" }}
+              />
+              <Stack.Screen
+                name="ads/update"
+                getId={({ params }) => params?.id}
+                options={{ animation: "slide_from_bottom" }}
+              />
+              <Stack.Screen
+                name="ads/details"
+                getId={({ params }) => params?.id}
+              />
+              <Stack.Screen
+                name="ads/details2"
+                getId={({ params }) => params?.id}
+              />
+              <Stack.Screen
+                name="ads/seller"
+                getId={({ params }) => params?.id}
+                options={{ title: "", headerShown: true }}
+              />
+              <Stack.Screen
+                name="ads/fullscreen"
+                options={{ headerShown: false, animation: "fade" }}
+              />
+              <Stack.Screen
+                name="ads/chat"
+                getId={({ params }) => params?.id}
+                options={{ headerTitle: "" }}
+              />
+              <Stack.Screen
+                name="search/search"
+                options={{ headerShown: false, title: "Search" }}
+              />
+              <Stack.Screen
+                name="search/categories"
+                options={{ headerTitle: "Categories", presentation: "modal" }}
+                getId={({ params }) => params?.parentId}
+              />
+              <Stack.Screen
+                name="search/categories_menu"
+                options={{
+                  headerTitle: "All Categories",
+                  presentation: "modal",
+                }}
+                getId={({ params }) => new Date().toISOString()}
+              />
+              <Stack.Screen
+                name="search/results"
+                options={{ headerShown: false }}
+                getId={({ params }) => params?.category_id}
+              />
+              <Stack.Screen
+                name="search/cities"
+                options={{ presentation: "modal", headerTitle: "Location" }}
+              />
+              <Stack.Screen
+                name="search/cities_menu"
+                options={{ presentation: "modal", headerTitle: "Location" }}
+              />
+              <Stack.Screen
+                name="search/filters"
+                options={{
+                  presentation: "fullScreenModal",
+                  headerTitle: "Filter",
+                }}
+              />
+              <Stack.Screen
+                name="(user)/business-info"
+                options={{ title: "Business Information" }}
+              />
+              <Stack.Screen
+                name="(user)/close-account"
+                options={{ title: "Close Account" }}
+              />
+              <Stack.Screen
+                name="(user)/mylisting"
+                options={{ title: "My Listing" }}
+              />
+              <Stack.Screen
+                name="(user)/notifications"
+                options={{ title: "Notifications" }}
+              />
+              <Stack.Screen
+                name="(user)/personal-info"
+                options={{ title: "Personal Information" }}
+              />
+              <Stack.Screen
+                name="(user)/signin-security"
+                options={{ title: "SignIn & Security" }}
+              />
 
-            <Stack.Screen
-              name="(user)/email"
-              options={{ title: "Change Email" }}
-            />
-            <Stack.Screen
-              name="(user)/phone"
-              options={{ title: "Change Phone Number" }}
-            />
-            <Stack.Screen
-              name="(user)/change-password"
-              options={{ title: "Change Password" }}
-            />
-            <Stack.Screen name="pages/terms" />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-        </AuthProvider>
-      </AuthModalProvider>
+              <Stack.Screen
+                name="(user)/email"
+                options={{ title: "Change Email" }}
+              />
+              <Stack.Screen
+                name="(user)/phone"
+                options={{ title: "Change Phone Number" }}
+              />
+              <Stack.Screen
+                name="(user)/change-password"
+                options={{ title: "Change Password" }}
+              />
+              <Stack.Screen name="pages/terms" />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+          </AuthProvider>
+        </AuthModalProvider>
+      </ActionSheetProvider>
       <StatusBar style="auto" />
     </ThemeProvider>
   );

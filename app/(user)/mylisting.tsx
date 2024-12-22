@@ -16,6 +16,7 @@ import usePostStore, { Post } from "@/hooks/store/useFetchPosts";
 import PostCardLandscape from "@/components/ui/cards/PostCardLandscape";
 import { useAuthModal } from "@/lib/auth/AuthModelProvider";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import LoadingBar from "@/components/ui/cards/LoadingBar";
 
 interface Refreshing {
   all: boolean;
@@ -43,6 +44,7 @@ export default function MessagesScreen() {
     fetchLoggedInUserPosts,
     fetchLoggedInUserPendingPosts,
     fetchLoggedInUserArchivedPosts,
+    deletePosts,
     loadingStates,
     addToSavedPost,
     pagination,
@@ -56,6 +58,10 @@ export default function MessagesScreen() {
     else showLoginModal();
   };
 
+  const handleDeletePost = (postId: number) => {
+    if (!loadingStates.deletePost) deletePosts([postId]);
+  };
+
   const renderItem = ({ item }: { item: Post }) => {
     return (
       <PostCardLandscape
@@ -64,6 +70,7 @@ export default function MessagesScreen() {
         size={width - 8}
         showMenu
         toggleSaved={handleToggleSaved}
+        deletePost={handleDeletePost}
       />
     );
   };
@@ -187,7 +194,7 @@ export default function MessagesScreen() {
       {isSearching ? (
         <FlatList
           data={filterPosts()}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item?.id?.toString()}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
           onEndReached={loadMore}
@@ -276,6 +283,10 @@ export default function MessagesScreen() {
               />
             </TabView.Item>
           </TabView>
+          <LoadingBar
+            style={{ position: "absolute", top: 0, zIndex: 100 }}
+            loading={loadingStates.deletePost}
+          />
         </View>
       )}
     </SafeAreaView>

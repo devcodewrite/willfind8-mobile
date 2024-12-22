@@ -1,10 +1,16 @@
 import React, { useEffect, useRef } from "react";
-import { Button, lightColors } from "@rneui/themed";
+import { Button, Header, Icon, lightColors, Text } from "@rneui/themed";
 import { router, Stack } from "expo-router";
-import { ActivityIndicator, FlatList, StyleSheet } from "react-native";
-import { View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
+import { Animated, View } from "react-native";
 
 import PostCardLandscape from "@/components/ui/cards/PostCardLandscape";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DescriptionCard from "@/components/ui/cards/DescriptionCard";
 import ChatWithSellerCard from "@/components/ui/cards/ChatWithSellerCard";
 import SellerAdsList from "@/components/ui/lists/SellerAdsList";
@@ -17,9 +23,6 @@ import LoadingBar from "@/components/ui/cards/LoadingBar";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useAuthModal } from "@/lib/auth/AuthModelProvider";
 import SavedButton from "@/components/ui/cards/SavedButton";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useActionSheet } from "@expo/react-native-action-sheet";
-import { Alert } from "react-native";
 
 export default function DetailsLayout() {
   const route = useRouteInfo();
@@ -89,46 +92,6 @@ export default function DetailsLayout() {
     else showLoginModal();
   };
 
-  const { showActionSheetWithOptions } = useActionSheet();
-  const openMenu = () => {
-    const options = [
-      "Report this seller",
-      "Hide ads from this seller",
-      "Cancel",
-    ];
-    const destructiveButtonIndex = 0;
-    const cancelButtonIndex = 2;
-
-    showActionSheetWithOptions(
-      {
-        options,
-        cancelButtonIndex,
-        destructiveButtonIndex,
-      },
-      (selectedIndex: any) => {
-        switch (selectedIndex) {
-          case 1:
-            Alert.alert(
-              "Are you sure?",
-              "You would not seeing ads from this seller.",
-              [
-                { text: "Yes", style: "destructive" },
-                { text: "Cancel", style: "cancel" },
-              ]
-            );
-            break;
-
-          case destructiveButtonIndex:
-            // Delete
-            break;
-
-          case cancelButtonIndex:
-          // Canceled
-        }
-      }
-    );
-  };
-
   if (!post) return null;
 
   return (
@@ -137,24 +100,14 @@ export default function DetailsLayout() {
         options={{
           title: post?.title,
           headerRight: () => (
-            <View style={{ flexDirection: "row" }}>
-              <SavedButton
-                active={
-                  !!user &&
-                  post.savedByLoggedUser &&
-                  !!post.savedByLoggedUser.find(
-                    (save) => save.user_id == user.id
-                  )
-                }
-                onPress={() => handleToggleSaved(postId)}
-              />
-              <Button
-                onPress={openMenu}
-                type="clear"
-                buttonStyle={{ paddingHorizontal: 4 }}
-                icon={{ name: "more-horiz" }}
-              />
-            </View>
+            <SavedButton
+              active={
+                !!user &&
+                post.savedByLoggedUser &&
+                !!post.savedByLoggedUser.find((save) => save.user_id == user.id)
+              }
+              onPress={() => handleToggleSaved(postId)}
+            />
           ),
         }}
       />

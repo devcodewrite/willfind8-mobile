@@ -168,6 +168,7 @@ interface PostStore {
     fetchSeller: boolean;
     fetchPost: boolean;
     addPost: boolean;
+    deletePost: boolean;
     postAdded: boolean;
     updatePost: boolean;
     postUpdated: boolean;
@@ -193,6 +194,7 @@ interface PostStore {
   fetchPost: (postId: number, params?: Params) => Promise<void>;
   addToSavedPost: (postId: number, user: User) => Promise<void>;
   addPost: (advert: Advert) => Promise<void>;
+  deletePosts: (postIds: number[]) => Promise<void>;
   updatePost: (advert: Advert) => Promise<void>;
   archivePost: (postId: number) => Promise<void>;
 }
@@ -247,6 +249,7 @@ const usePostStore = create<
     fetchSeller: false,
     fetchPost: false,
     addPost: false,
+    deletePost: false,
     postAdded: false,
     updatePost: false,
     postUpdated: false,
@@ -926,6 +929,52 @@ const usePostStore = create<
           ...get().loadingStates,
           addPost: false,
           postAdded: true,
+        },
+      });
+    }
+  },
+  // Post delete
+  deletePosts: async (postIds: number[]) => {
+    set({
+      loadingStates: { ...get().loadingStates, deletePost: true },
+      error: null,
+    });
+
+    try {
+      const response = await api.delete(`/api/posts/${postIds.join(",")}`);
+
+      const { success, message } = response.data;
+
+      if (success) {
+        const { items: newItems } = get();
+
+        for (const key of postIds) {
+          delete newItems[key];
+        }
+
+        set((state) => ({
+          items: newItems,
+          userPostIds: state.userPostIds.filter((id) => !postIds.includes(id)),
+          loadingStates: {
+            ...state.loadingStates,
+            deletePost: false,
+          },
+        }));
+      } else {
+        set({
+          error: message || "Failed to fetch post",
+          loadingStates: {
+            ...get().loadingStates,
+            deletePost: false,
+          },
+        });
+      }
+    } catch (error: any) {
+      set({
+        error: error.message || "Something went wrong",
+        loadingStates: {
+          ...get().loadingStates,
+          deletePost: false,
         },
       });
     }

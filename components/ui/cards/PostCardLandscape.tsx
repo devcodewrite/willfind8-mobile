@@ -1,4 +1,4 @@
-import React, { memo, useState } from "react";
+import React, { memo } from "react";
 import {
   View,
   StyleSheet,
@@ -14,7 +14,6 @@ import {
   Icon,
   ButtonGroup,
   lightColors,
-  ListItem,
 } from "@rneui/themed";
 import { Image } from "expo-image";
 import { CountLabel } from "./CountLabel";
@@ -24,6 +23,7 @@ import { useAuthModal } from "@/lib/auth/AuthModelProvider";
 import { router } from "expo-router";
 import { Post } from "@/hooks/store/useFetchPosts";
 import DeleteButton from "./DeleteButton";
+import { useActionSheet } from "@expo/react-native-action-sheet";
 
 const PostCardLandscape = ({
   post,
@@ -34,13 +34,14 @@ const PostCardLandscape = ({
   deleteSaved,
   showMenu,
   hideSave,
-  onDelete,
+  deletePost,
 }: {
   post: Post;
   size: DimensionValue;
   onPress: (event?: GestureResponderEvent) => void;
   toggleSaved?: (id: number) => void;
   deleteSaved?: (id: number) => void;
+  deletePost?: (id: number) => void;
   hideSave?: boolean;
   onDelete?: (id: number) => void;
   style?: ViewStyle;
@@ -49,7 +50,6 @@ const PostCardLandscape = ({
   const placeholder = require("@/assets/images/Loading_icon.gif");
   const { isAuthenticated, user } = useAuth();
   const { showLoginModal } = useAuthModal();
-  const [menuVisible, setMenuVisible] = useState(false);
 
   const handleButtons = async (index: number) => {
     if (!isAuthenticated) return showLoginModal();
@@ -60,25 +60,38 @@ const PostCardLandscape = ({
     }
   };
 
-  const handleEdit = () => {
-    router.push({ pathname: "/ads/update", params: { id: post.id } });
-    setMenuVisible(false);
-  };
+  const { showActionSheetWithOptions } = useActionSheet();
+  const openMenu = () => {
+    const options = ["Delete", "Disable", "Cancel"];
+    const destructiveButtonIndex = 0;
+    const cancelButtonIndex = 2;
 
-  const handleDelete = () => {
-    if (onDelete) onDelete(post.id);
-    setMenuVisible(false);
+    showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex,
+        destructiveButtonIndex,
+      },
+      (selectedIndex: any) => {
+        switch (selectedIndex) {
+          case 1:
+            // Save
+            break;
+
+          case destructiveButtonIndex:
+            // Delete
+            if (deletePost) deletePost(post.id);
+            break;
+
+          case cancelButtonIndex:
+          // Canceled
+        }
+      }
+    );
   };
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.75}
-      style={style}
-      onPress={(e) => {
-        if (showMenu) setMenuVisible(false);
-        else if (onPress) onPress(e);
-      }}
-    >
+    <TouchableOpacity activeOpacity={0.75} style={style} onPress={onPress}>
       <Card
         wrapperStyle={{ flexDirection: "row" }}
         containerStyle={[styles.card, { width: size }]}
@@ -112,41 +125,7 @@ const PostCardLandscape = ({
                 {post.title}
               </Text>
               {showMenu && (
-                <Icon
-                  name="more-horiz"
-                  size={28}
-                  onPress={() => setMenuVisible(!menuVisible)}
-                />
-              )}
-              {menuVisible && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 14,
-                    end: 20,
-                    zIndex: 100,
-                    width: 200,
-                  }}
-                >
-                  <Card
-                    containerStyle={{
-                      width: 200,
-                      padding: 0,
-                      borderRadius: 15,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <ListItem
-                      containerStyle={{ paddingVertical: 10 }}
-                      onPress={handleDelete}
-                    >
-                      <ListItem.Content>
-                        <ListItem.Title>Delete</ListItem.Title>
-                      </ListItem.Content>
-                      <ListItem.Chevron name="trash" />
-                    </ListItem>
-                  </Card>
-                </View>
+                <Icon name="more-horiz" size={28} onPress={openMenu} />
               )}
             </View>
             <View style={styles.priceSection}>
@@ -206,6 +185,7 @@ const PostCardLandscape = ({
 const arePropsEqual = (prevProps: any, nextProps: any) => {
   // Perform a shallow comparison on props for memoization
   return (
+    prevProps.post.id === nextProps.post.id &&
     prevProps.post.title === nextProps.post.title &&
     prevProps.post.count_pictures === nextProps.post.count_pictures &&
     prevProps.post.price_formatted === nextProps.post.price_formatted &&

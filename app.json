@@ -45,8 +45,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera."
+          "photosPermission": "$(PRODUCT_NAME) need to access your photos before you can post pictures.",
+          "cameraPermission": "$(PRODUCT_NAME) need to access your camera before you can post pictures."
         }
       ],
       "expo-asset",

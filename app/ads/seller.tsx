@@ -75,7 +75,7 @@ export default function SellerScreen() {
             style={{ paddingHorizontal: 10 }}
             onPress={() =>
               router.push({
-                pathname: "../ads/details",
+                pathname: "../ads/details2",
                 params: { id: item.id },
               })
             }
